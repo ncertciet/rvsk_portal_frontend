@@ -332,12 +332,13 @@ function SummaryPage({ summaryData, regionalLeaders, stateTableData, integration
   const students = summaryData?.students || {};
   const coverage = integrationCoverage || {};
 
-  const totalSchools = coverage.TOTAL_SCHOOLS || 0;
-  const totalTeachersUDISE = coverage.TOTAL_TEACHERS || 0;
-  const totalStudentsUDISE = coverage.TOTAL_STUDENTS || 0;
-  const totalStates = coverage.TOTAL_STATES || 0;
-  const totalDistricts = coverage.TOTAL_DISTRICTS || 0;
-  const totalBlocks = coverage.TOTAL_BLOCKS || 0;
+  // Map camelCase field names from API response
+  const totalSchools = coverage.totalSchools || coverage.TOTAL_SCHOOLS || coverage.total_schools || 0;
+  const totalTeachersUDISE = coverage.totalTeachers || coverage.TOTAL_TEACHERS || coverage.total_teachers || 0;
+  const totalStudentsUDISE = coverage.totalStudents || coverage.TOTAL_STUDENTS || coverage.total_students || 0;
+  const totalStates = coverage.totalStates || coverage.TOTAL_STATES || coverage.total_states || 0;
+  const totalDistricts = coverage.totalDistricts || coverage.TOTAL_DISTRICTS || coverage.total_districts || 0;
+  const totalBlocks = coverage.totalBlocks || coverage.TOTAL_BLOCKS || coverage.total_blocks || 0;
 
   const schoolsOnboarded = (teachers.schoolsReporting || 0) + (students.schoolsReporting || 0);
   const schoolsReportingTeachers = teachers.schoolsReporting || 0;
@@ -471,17 +472,23 @@ function SummaryPage({ summaryData, regionalLeaders, stateTableData, integration
             <Box sx={{ background: 'linear-gradient(135deg, #6B21A8, #7C3AED)', borderRadius: 1, px: 2, py: 1, mb: 2 }}>
               <Typography variant="subtitle2" fontWeight={700} color="#fff">Integration Coverage</Typography>
             </Box>
-            <Grid container spacing={1}>
-              <Grid item xs={4}>
-                <ReactECharts option={gaugeOption(totalStates, 36, 'States/UTs')} style={{ height: 150 }} />
+            {integrationCoverage ? (
+              <Grid container spacing={1}>
+                <Grid item xs={4}>
+                  <ReactECharts option={gaugeOption(totalStates, 36, 'States/UTs')} style={{ height: 150 }} />
+                </Grid>
+                <Grid item xs={4}>
+                  <ReactECharts option={gaugeOption(totalDistricts, 800, 'Districts')} style={{ height: 150 }} />
+                </Grid>
+                <Grid item xs={4}>
+                  <ReactECharts option={gaugeOption(totalBlocks, 7000, 'Blocks')} style={{ height: 150 }} />
+                </Grid>
               </Grid>
-              <Grid item xs={4}>
-                <ReactECharts option={gaugeOption(totalDistricts, 800, 'Districts')} style={{ height: 150 }} />
-              </Grid>
-              <Grid item xs={4}>
-                <ReactECharts option={gaugeOption(totalBlocks, 7000, 'Blocks')} style={{ height: 150 }} />
-              </Grid>
-            </Grid>
+            ) : (
+              <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: 150 }}>
+                <CircularProgress sx={{ color: PURPLE_PRIMARY }} />
+              </Box>
+            )}
           </Paper>
         </Grid>
         {/* Section 2: Schools Integration */}
@@ -496,51 +503,62 @@ function SummaryPage({ summaryData, regionalLeaders, stateTableData, integration
       </Grid>
 
       {/* Section 3: Integration Status (Full Width) */}
-      <Paper sx={{ mb: 2, overflow: 'hidden' }}>
-        <Box sx={{ background: 'linear-gradient(135deg, #6B21A8, #7C3AED)', px: 2, py: 1 }}>
-          <Typography variant="subtitle2" fontWeight={700} color="#fff">Integration Status</Typography>
-        </Box>
-        <Box sx={{ p: 2 }}>
-          <Grid container spacing={2}>
-            <Grid item xs={4}>
-              <Typography variant="caption" color="text.secondary">Total Schools (UDISE)</Typography>
-              <Typography variant="h6" fontWeight={700}>{formatIndian(totalSchools)}</Typography>
-            </Grid>
-            <Grid item xs={4}>
-              <Typography variant="caption" color="text.secondary">Total Teachers (UDISE)</Typography>
-              <Typography variant="h6" fontWeight={700}>{formatIndian(totalTeachersUDISE)}</Typography>
-            </Grid>
-            <Grid item xs={4}>
-              <Typography variant="caption" color="text.secondary">Total Students (UDISE)</Typography>
-              <Typography variant="h6" fontWeight={700}>{formatIndian(totalStudentsUDISE)}</Typography>
-            </Grid>
-            <Grid item xs={4}>
-              <Typography variant="caption" color="text.secondary">Schools Onboarded</Typography>
-              <Typography variant="h6" fontWeight={700} color="#4CAF50">{formatIndian(schoolsOnboarded)}</Typography>
-            </Grid>
-            <Grid item xs={4}>
-              <Typography variant="caption" color="text.secondary">Teachers Onboarded</Typography>
-              <Typography variant="h6" fontWeight={700} color="#4CAF50">{formatIndian(teachersTotalInSchools)}</Typography>
-            </Grid>
-            <Grid item xs={4}>
-              <Typography variant="caption" color="text.secondary">Students Onboarded</Typography>
-              <Typography variant="h6" fontWeight={700} color="#4CAF50">{formatIndian(studentsTotalInSchools)}</Typography>
-            </Grid>
-            <Grid item xs={4}>
-              <Typography variant="caption" color="text.secondary">Schools Yet to Onboard</Typography>
-              <Typography variant="h6" fontWeight={700} color="#F44336">{formatIndian(totalSchools - schoolsOnboarded)}</Typography>
-            </Grid>
-            <Grid item xs={4}>
-              <Typography variant="caption" color="text.secondary">Teachers Yet to Onboard</Typography>
-              <Typography variant="h6" fontWeight={700} color="#F44336">{formatIndian(totalTeachersUDISE - teachersTotalInSchools)}</Typography>
-            </Grid>
-            <Grid item xs={4}>
-              <Typography variant="caption" color="text.secondary">Students Yet to Onboard</Typography>
-              <Typography variant="h6" fontWeight={700} color="#F44336">{formatIndian(totalStudentsUDISE - studentsTotalInSchools)}</Typography>
+      {integrationCoverage && summaryData ? (
+        <Paper sx={{ mb: 2, overflow: 'hidden' }}>
+          <Box sx={{ background: 'linear-gradient(135deg, #6B21A8, #7C3AED)', px: 2, py: 1 }}>
+            <Typography variant="subtitle2" fontWeight={700} color="#fff">Integration Status</Typography>
+          </Box>
+          <Box sx={{ p: 2 }}>
+            <Grid container spacing={2}>
+              <Grid item xs={4}>
+                <Typography variant="caption" color="text.secondary">Total Schools (UDISE)</Typography>
+                <Typography variant="h6" fontWeight={700}>{formatIndian(totalSchools)}</Typography>
+              </Grid>
+              <Grid item xs={4}>
+                <Typography variant="caption" color="text.secondary">Total Teachers (UDISE)</Typography>
+                <Typography variant="h6" fontWeight={700}>{formatIndian(totalTeachersUDISE)}</Typography>
+              </Grid>
+              <Grid item xs={4}>
+                <Typography variant="caption" color="text.secondary">Total Students (UDISE)</Typography>
+                <Typography variant="h6" fontWeight={700}>{formatIndian(totalStudentsUDISE)}</Typography>
+              </Grid>
+              <Grid item xs={4}>
+                <Typography variant="caption" color="text.secondary">Schools Onboarded</Typography>
+                <Typography variant="h6" fontWeight={700} color="#4CAF50">{formatIndian(schoolsOnboarded)}</Typography>
+              </Grid>
+              <Grid item xs={4}>
+                <Typography variant="caption" color="text.secondary">Teachers Onboarded</Typography>
+                <Typography variant="h6" fontWeight={700} color="#4CAF50">{formatIndian(teachersTotalInSchools)}</Typography>
+              </Grid>
+              <Grid item xs={4}>
+                <Typography variant="caption" color="text.secondary">Students Onboarded</Typography>
+                <Typography variant="h6" fontWeight={700} color="#4CAF50">{formatIndian(studentsTotalInSchools)}</Typography>
+              </Grid>
+              <Grid item xs={4}>
+                <Typography variant="caption" color="text.secondary">Schools Yet to Onboard</Typography>
+                <Typography variant="h6" fontWeight={700} color="#F44336">{formatIndian(totalSchools - schoolsOnboarded)}</Typography>
+              </Grid>
+              <Grid item xs={4}>
+                <Typography variant="caption" color="text.secondary">Teachers Yet to Onboard</Typography>
+                <Typography variant="h6" fontWeight={700} color="#F44336">{formatIndian(totalTeachersUDISE - teachersTotalInSchools)}</Typography>
+              </Grid>
+              <Grid item xs={4}>
+                <Typography variant="caption" color="text.secondary">Students Yet to Onboard</Typography>
+                <Typography variant="h6" fontWeight={700} color="#F44336">{formatIndian(totalStudentsUDISE - studentsTotalInSchools)}</Typography>
             </Grid>
           </Grid>
         </Box>
       </Paper>
+      ) : (
+        <Paper sx={{ mb: 2, overflow: 'hidden' }}>
+          <Box sx={{ background: 'linear-gradient(135deg, #6B21A8, #7C3AED)', px: 2, py: 1 }}>
+            <Typography variant="subtitle2" fontWeight={700} color="#fff">Integration Status</Typography>
+          </Box>
+          <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', p: 4 }}>
+            <CircularProgress sx={{ color: PURPLE_PRIMARY }} />
+          </Box>
+        </Paper>
+      )}
 
       {/* Row 3: Teachers Attendance + Students Attendance */}
       <Grid container spacing={2} sx={{ mb: 2 }}>
