@@ -1578,6 +1578,7 @@ export default function AttendanceDashboard({ page }: { page?: string }) {
   const [selectedDistrictId, setSelectedDistrictId] = useState<string>('');
   const [selectedBlockId, setSelectedBlockId] = useState<string>('');
   const [selectedClusterId, setSelectedClusterId] = useState<string>('');
+  const [selectedSchoolId, setSelectedSchoolId] = useState<string>('');
 
   // Sync from outlet context when it changes
   useEffect(() => {
@@ -1586,6 +1587,7 @@ export default function AttendanceDashboard({ page }: { page?: string }) {
     if (outletContext.selectedDistrictId !== undefined) setSelectedDistrictId(outletContext.selectedDistrictId);
     if (outletContext.selectedBlockId !== undefined) setSelectedBlockId(outletContext.selectedBlockId);
     if (outletContext.selectedClusterId !== undefined) setSelectedClusterId(outletContext.selectedClusterId);
+    if (outletContext.selectedSchoolId !== undefined) setSelectedSchoolId(outletContext.selectedSchoolId);
   }, [outletContext]);
 
   // ─── Filter options no longer needed (handled by AttendanceLayout) ───
@@ -1666,7 +1668,7 @@ export default function AttendanceDashboard({ page }: { page?: string }) {
     };
 
     fetchData();
-  }, [activeTab, selectedStateId, selectedDate]);
+  }, [activeTab, selectedStateId, selectedDate, selectedDistrictId, selectedBlockId, selectedClusterId, selectedSchoolId]);
 
   const renderPage = () => {
     switch (activeTab) {
