@@ -111,7 +111,13 @@ const FALLBACK_NAV: NavItem[] = [
     { label: 'Data Quality', icon: <DashboardIcon />, path: '/rvsk/dashboard/assessment/quality' },
   ]},
   { label: 'Schemes', icon: <AccountBalanceIcon />, path: '/rvsk/dashboard/pm-shri' },
-  { label: 'Accreditation', icon: <VerifiedIcon />, path: '/rvsk/dashboard/accreditation' },
+  { label: 'Accreditation', icon: <VerifiedIcon />, path: '/rvsk/dashboard/accreditation/programme', children: [
+    { label: 'Programme & Framework', icon: <DashboardIcon />, path: '/rvsk/dashboard/accreditation/programme' },
+    { label: 'Coverage & Reach', icon: <DashboardIcon />, path: '/rvsk/dashboard/accreditation/coverage' },
+    { label: 'Process & Operations', icon: <DashboardIcon />, path: '/rvsk/dashboard/accreditation/process' },
+    { label: 'Data Quality', icon: <DashboardIcon />, path: '/rvsk/dashboard/accreditation/data-quality' },
+    { label: 'Impact & Outcomes', icon: <DashboardIcon />, path: '/rvsk/dashboard/accreditation/impact' },
+  ]},
   { label: 'VSK Management', icon: <ApartmentIcon />, path: '/rvsk/vsk-details', children: [
     { label: 'VSK Details', icon: <ApartmentIcon />, path: '/rvsk/vsk-details' },
     { label: 'VSK Admin', icon: <AdminPanelSettingsIcon />, path: '/rvsk/vsk-admin' },
@@ -132,7 +138,6 @@ const FALLBACK_NAV: NavItem[] = [
     { label: 'Module Admin', icon: <DashboardIcon />, path: '/rvsk/admin/modules' },
     { label: 'Page Admin', icon: <DashboardIcon />, path: '/rvsk/admin/pages' },
     { label: 'Permission Admin', icon: <DashboardIcon />, path: '/rvsk/admin/permissions' },
-    { label: 'User Permissions', icon: <DashboardIcon />, path: '/rvsk/user-permissions' },
   ]},
   { label: 'My Account', icon: <PersonIcon />, path: '/rvsk/profile', children: [
     { label: 'My Profile', icon: <PersonIcon />, path: '/rvsk/profile' },

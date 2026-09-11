@@ -42,6 +42,12 @@ import MicroImprovementDashboard from './dashboards/schemes/MicroImprovementDash
 import DikshaEtbDashboard from './dashboards/schemes/DikshaEtbDashboard';
 import AttendanceLayout from './dashboards/state/attendance/AttendanceLayout';
 import AttendanceDashboard from './dashboards/state/attendance/AttendanceDashboard';
+import AccreditationDashboard from './dashboards/state/accreditation/AccreditationDashboard';
+import ProgrammeFramework from './dashboards/state/accreditation/sections/ProgrammeFramework';
+import CoverageReach from './dashboards/state/accreditation/sections/CoverageReach';
+import ProcessOperations from './dashboards/state/accreditation/sections/ProcessOperations';
+import DataQuality from './dashboards/state/accreditation/sections/DataQuality';
+import ImpactOutcomes from './dashboards/state/accreditation/sections/ImpactOutcomes';
 import PlaceholderDashboard from './dashboards/state/PlaceholderDashboard';
 import { AssessmentOverview, AssessmentDemographics, AssessmentSubjects, AssessmentTrends, AssessmentRankings, AssessmentQuality } from './dashboards/assessment';
 import { GrievanceDashboard, RaiseGrievance, GrievanceList, GrievanceDetail } from './dashboards/grievance';
@@ -132,7 +138,15 @@ function App() {
           <Route path="/rvsk/dashboard/assessment/rankings" element={<AssessmentRankings />} />
           <Route path="/rvsk/dashboard/assessment/quality" element={<AssessmentQuality />} />
           <Route path="/rvsk/dashboard/administration" element={<PlaceholderDashboard title="Administration" badge="A3" badgeColor="#92400E" description="School administration, district management, and operational metrics" />} />
-          <Route path="/rvsk/dashboard/accreditation" element={<PlaceholderDashboard title="Accreditation" badge="A4" badgeColor="#D97706" description="School accreditation audits, compliance tracking, and quality assurance" />} />
+          {/* A4 - Accreditation KPI Dashboard: sections with shared filter bar */}
+          <Route path="/rvsk/dashboard/accreditation" element={<AccreditationDashboard />}>
+            <Route index element={<Navigate to="programme" replace />} />
+            <Route path="programme" element={<ProgrammeFramework />} />
+            <Route path="coverage" element={<CoverageReach />} />
+            <Route path="process" element={<ProcessOperations />} />
+            <Route path="data-quality" element={<DataQuality />} />
+            <Route path="impact" element={<ImpactOutcomes />} />
+          </Route>
           <Route path="/rvsk/dashboard/adaptive-learning" element={<PlaceholderDashboard title="Adaptive Learning" badge="A5" badgeColor="#059669" description="AI-powered learning recommendations, engagement analytics, and progress tracking" />} />
           <Route path="/rvsk/dashboard/apaar" element={<PlaceholderDashboard title="APAAR" badge="A6" badgeColor="#0E7490" description="Academic Bank of Credits, student ID registry, and Aadhaar integration" />} />
 

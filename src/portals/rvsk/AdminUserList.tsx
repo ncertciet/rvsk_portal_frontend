@@ -42,7 +42,12 @@ export default function AdminUserList() {
     try {
       const res = await apiClient.put(`/users/${user.id}/reset-password`);
       setResetDialog({ open: true, user, tempPassword: res.data.tempPassword });
-    } catch { alert('Failed to reset password'); }
+    } catch (err: any) {
+      const status = err?.response?.status;
+      const serverMsg = err?.response?.data?.message || err?.message || 'Unknown error';
+      console.error('[ResetPassword] failed:', status, err?.response?.data || err);
+      alert(`Failed to reset password${status ? ` (HTTP ${status})` : ''}: ${serverMsg}`);
+    }
   };
 
   const handleToggleActive = async (user: any) => {

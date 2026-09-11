@@ -71,7 +71,10 @@ interface EditableOverride {
   dirty: boolean;
 }
 
-const ROLES = ['Super_Admin', 'RVSK_Admin', 'State_Admin', 'District_Admin', 'Analytics_User', 'Read_Only_User'];
+const ROLES = [
+  'Super_Admin', 'RVSK_Admin', 'RVSK_SPOC', 'Ministry_Admin', 'State_Admin',
+  'District_Admin', 'Block_Admin', 'Analytics_User', 'Read_Only_User', 'Viewer',
+];
 
 // Fallback permission data when backend is unavailable
 const FALLBACK_PAGES_BY_MODULE = [

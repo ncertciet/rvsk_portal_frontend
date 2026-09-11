@@ -17,7 +17,6 @@ export interface AttendanceFilterContext {
   selectedDistrictId: string;
   selectedBlockId: string;
   selectedClusterId: string;
-  selectedSchoolId: string;
 }
 
 export function useAttendanceFilters() {
@@ -53,7 +52,6 @@ export default function AttendanceLayout() {
   );
   const [selectedBlockId, setSelectedBlockId] = useState<string>('');
   const [selectedClusterId, setSelectedClusterId] = useState<string>('');
-  const [selectedSchoolId, setSelectedSchoolId] = useState<string>('');
 
   const [states, setStates] = useState<any[]>([]);
   const [districts, setDistricts] = useState<any[]>([]);
@@ -110,7 +108,6 @@ export default function AttendanceLayout() {
         .then(res => setSchools(res.data.data || []))
         .catch(() => setSchools([]));
     } else { setSchools([]); }
-    setSelectedSchoolId('');
   }, [selectedClusterId]);
 
   // Reset only resets filters BELOW the user's locked level
@@ -125,7 +122,6 @@ export default function AttendanceLayout() {
     // District user keeps both state + district locked
     setSelectedBlockId('');
     setSelectedClusterId('');
-    setSelectedSchoolId('');
     setBlocks([]); setClusters([]); setSchools([]);
   };
 
@@ -136,7 +132,6 @@ export default function AttendanceLayout() {
     selectedDistrictId: selectedDistrictId || userDistrictCode || '',
     selectedBlockId,
     selectedClusterId,
-    selectedSchoolId,
   };
 
   return (
@@ -163,7 +158,7 @@ export default function AttendanceLayout() {
             <InputLabel>State/UT</InputLabel>
             <Select value={selectedStateId} label="State/UT" onChange={(e) => setSelectedStateId(e.target.value as number | '')}>
               <MenuItem value="">All States</MenuItem>
-              {states.map((s: any, idx: number) => <MenuItem key={`state_${idx}_${s.STATE_ID}`} value={s.STATE_ID}>{s.STATE_NAME}</MenuItem>)}
+              {states.map((s: any) => <MenuItem key={s.STATE_ID} value={s.STATE_ID}>{s.STATE_NAME}</MenuItem>)}
             </Select>
           </FormControl>
         )}
@@ -174,7 +169,7 @@ export default function AttendanceLayout() {
             <InputLabel>District</InputLabel>
             <Select value={selectedDistrictId} label="District" onChange={(e) => setSelectedDistrictId(e.target.value as string)}>
               <MenuItem value="">All Districts</MenuItem>
-              {districts.map((d: any, idx: number) => <MenuItem key={`district_${idx}_${d.DISTRICT_ID}`} value={d.DISTRICT_ID}>{d.DISTRICT_NAME}</MenuItem>)}
+              {districts.map((d: any) => <MenuItem key={d.DISTRICT_ID} value={d.DISTRICT_ID}>{d.DISTRICT_NAME}</MenuItem>)}
             </Select>
           </FormControl>
         )}
@@ -185,7 +180,7 @@ export default function AttendanceLayout() {
             <InputLabel>Block</InputLabel>
             <Select value={selectedBlockId} label="Block" onChange={(e) => setSelectedBlockId(e.target.value as string)}>
               <MenuItem value="">All Blocks</MenuItem>
-              {blocks.map((b: any, idx: number) => <MenuItem key={`block_${idx}_${b.BLOCK_ID}`} value={b.BLOCK_ID}>{b.BLOCK_NAME}</MenuItem>)}
+              {blocks.map((b: any) => <MenuItem key={b.BLOCK_ID} value={b.BLOCK_ID}>{b.BLOCK_NAME}</MenuItem>)}
             </Select>
           </FormControl>
         )}
@@ -195,16 +190,16 @@ export default function AttendanceLayout() {
           <InputLabel>Cluster</InputLabel>
           <Select value={selectedClusterId} label="Cluster" onChange={(e) => setSelectedClusterId(e.target.value as string)}>
             <MenuItem value="">All Clusters</MenuItem>
-            {clusters.map((c: any, idx: number) => <MenuItem key={`cluster_${idx}_${c.CLUSTER_ID}`} value={c.CLUSTER_ID}>{c.CLUSTER_NAME}</MenuItem>)}
+            {clusters.map((c: any) => <MenuItem key={c.CLUSTER_ID} value={c.CLUSTER_ID}>{c.CLUSTER_NAME}</MenuItem>)}
           </Select>
         </FormControl>
 
         {/* School Filter — always visible */}
         <FormControl size="small" sx={{ minWidth: 110 }}>
           <InputLabel>School</InputLabel>
-          <Select value={selectedSchoolId} label="School" onChange={(e) => setSelectedSchoolId(e.target.value as string)}>
+          <Select defaultValue="" label="School">
             <MenuItem value="">All Schools</MenuItem>
-            {schools.map((school: any, idx: number) => <MenuItem key={`school_${idx}_${school.SCHOOL_ID}`} value={school.SCHOOL_ID}>{school.SCHOOL_NAME}</MenuItem>)}
+            {schools.map((s: any) => <MenuItem key={s.SCHOOL_ID} value={s.SCHOOL_ID}>{s.SCHOOL_NAME}</MenuItem>)}
           </Select>
         </FormControl>
 

@@ -28,6 +28,10 @@ export default defineConfig({
         target: 'http://localhost:8083',
         changeOrigin: true,
       },
+      '/api/v1/accreditation': {
+        target: 'http://localhost:8083',
+        changeOrigin: true,
+      },
       '/api/v1': {
         target: 'http://localhost:8091',
         changeOrigin: true,
