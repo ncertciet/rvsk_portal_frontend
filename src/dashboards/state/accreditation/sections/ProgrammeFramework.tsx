@@ -4,6 +4,7 @@ import { Box, Grid, Typography, Alert } from '@mui/material';
 import { KpiCard, KpiBarChart, KpiTable } from '../components';
 import type { KpiTableColumn, BarChartDataItem } from '../components';
 import { accreditationApi } from '../api';
+import { getApiErrorMessage } from '../../../../services/apiError';
 
 // ─── TYPES ───────────────────────────────────────────────────────────────────
 
@@ -66,7 +67,7 @@ export default function ProgrammeFramework() {
         }
       } catch (err: any) {
         if (!cancelled) {
-          setError(err?.message || 'Failed to fetch Programme & Framework data');
+          setError(getApiErrorMessage(err, 'Failed to fetch Programme & Framework data'));
         }
       } finally {
         if (!cancelled) {

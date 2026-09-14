@@ -4,6 +4,7 @@ import { Box, Grid, Typography, Alert, Chip } from '@mui/material';
 import { KpiCard, KpiBarChart, KpiDonutChart, KpiTable } from '../components';
 import type { KpiTableColumn, BarChartDataItem, DonutChartDataItem } from '../components';
 import { accreditationApi } from '../api';
+import { getApiErrorMessage } from '../../../../services/apiError';
 
 // ─── TYPES ───────────────────────────────────────────────────────────────────
 
@@ -105,7 +106,7 @@ export default function CoverageReach() {
         }
       } catch (err: any) {
         if (!cancelled) {
-          setError(err?.message || 'Failed to fetch Coverage & Reach data');
+          setError(getApiErrorMessage(err, 'Failed to fetch Coverage & Reach data'));
         }
       } finally {
         if (!cancelled) {

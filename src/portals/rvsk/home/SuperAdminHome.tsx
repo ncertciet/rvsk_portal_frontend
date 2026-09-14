@@ -16,8 +16,10 @@ import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import DescriptionIcon from '@mui/icons-material/Description';
 import PersonIcon from '@mui/icons-material/Person';
 import ImageIcon from '@mui/icons-material/Image';
+import { Alert } from '@mui/material';
 import { SuperAdminHomeData, GalleryImage } from './types';
 import { fetchSuperAdminHome, fetchGalleryImages } from './homeApi';
+import { getApiErrorMessage } from '../../../services/apiError';
 import GalleryCarousel from './GalleryCarousel';
 
 const KPI_CONFIG = [
@@ -46,24 +48,41 @@ export default function SuperAdminHome() {
   const [data, setData] = useState<SuperAdminHomeData | null>(null);
   const [gallery, setGallery] = useState<GalleryImage[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
     async function load() {
       setLoading(true);
-      const [homeData, images] = await Promise.all([
-        fetchSuperAdminHome(),
-        fetchGalleryImages(),
-      ]);
-      if (!cancelled) {
-        setData(homeData);
-        setGallery(images);
-        setLoading(false);
+      setError(null);
+      try {
+        // Home KPIs are critical — failure shows an error state.
+        const homeData = await fetchSuperAdminHome();
+        if (!cancelled) setData(homeData);
+      } catch (err) {
+        if (!cancelled) setError(getApiErrorMessage(err, 'Failed to load dashboard data'));
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+      // Gallery is non-critical — degrade to empty on failure without blocking.
+      try {
+        const images = await fetchGalleryImages();
+        if (!cancelled) setGallery(images);
+      } catch {
+        if (!cancelled) setGallery([]);
       }
     }
     load();
     return () => { cancelled = true; };
   }, []);
+
+  if (error) {
+    return (
+      <Box sx={{ p: 3 }}>
+        <Alert severity="error">{error}</Alert>
+      </Box>
+    );
+  }
 
   if (loading) {
     return (

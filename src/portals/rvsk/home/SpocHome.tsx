@@ -10,8 +10,10 @@ import HourglassTopIcon from '@mui/icons-material/HourglassTop';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import ReportProblemIcon from '@mui/icons-material/ReportProblem';
+import { Alert } from '@mui/material';
 import { SpocHomeData } from './types';
 import { fetchSpocHome } from './homeApi';
+import { getApiErrorMessage } from '../../../services/apiError';
 
 const KPI_CONFIG = [
   { key: 'openGrievances', label: 'Open', icon: <ErrorOutlineIcon />, color: '#EF4444', bg: '#FEF2F2' },
@@ -29,20 +31,33 @@ export default function SpocHome() {
   const navigate = useNavigate();
   const [data, setData] = useState<SpocHomeData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
     async function load() {
       setLoading(true);
-      const homeData = await fetchSpocHome();
-      if (!cancelled) {
-        setData(homeData);
-        setLoading(false);
+      setError(null);
+      try {
+        const homeData = await fetchSpocHome();
+        if (!cancelled) setData(homeData);
+      } catch (err) {
+        if (!cancelled) setError(getApiErrorMessage(err, 'Failed to load dashboard data'));
+      } finally {
+        if (!cancelled) setLoading(false);
       }
     }
     load();
     return () => { cancelled = true; };
   }, []);
+
+  if (error) {
+    return (
+      <Box sx={{ p: 3 }}>
+        <Alert severity="error">{error}</Alert>
+      </Box>
+    );
+  }
 
   if (loading) {
     return (

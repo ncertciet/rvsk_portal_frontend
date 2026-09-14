@@ -4,6 +4,7 @@ import { Box, Grid, Typography, Alert } from '@mui/material';
 import { KpiCard, KpiBarChart, KpiDonutChart } from '../components';
 import type { BarChartDataItem, DonutChartDataItem } from '../components';
 import { accreditationApi } from '../api';
+import { getApiErrorMessage } from '../../../../services/apiError';
 
 // ─── TYPES ───────────────────────────────────────────────────────────────────
 
@@ -69,7 +70,7 @@ export default function DataQuality() {
         }
       } catch (err: any) {
         if (!cancelled) {
-          setError(err?.message || 'Failed to fetch Data Quality data');
+          setError(getApiErrorMessage(err, 'Failed to fetch Data Quality data'));
         }
       } finally {
         if (!cancelled) {

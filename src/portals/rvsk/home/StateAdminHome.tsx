@@ -11,8 +11,10 @@ import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import EditIcon from '@mui/icons-material/Edit';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import AssignmentIcon from '@mui/icons-material/Assignment';
+import { Alert } from '@mui/material';
 import { StateAdminHomeData, AssignedForm } from './types';
 import { fetchStateAdminHome } from './homeApi';
+import { getApiErrorMessage } from '../../../services/apiError';
 
 const STATUS_CONFIG: Record<AssignedForm['status'], { label: string; color: 'warning' | 'info' | 'success' }> = {
   PENDING: { label: 'Pending', color: 'warning' },
@@ -30,20 +32,33 @@ export default function StateAdminHome() {
   const navigate = useNavigate();
   const [data, setData] = useState<StateAdminHomeData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
     async function load() {
       setLoading(true);
-      const homeData = await fetchStateAdminHome();
-      if (!cancelled) {
-        setData(homeData);
-        setLoading(false);
+      setError(null);
+      try {
+        const homeData = await fetchStateAdminHome();
+        if (!cancelled) setData(homeData);
+      } catch (err) {
+        if (!cancelled) setError(getApiErrorMessage(err, 'Failed to load dashboard data'));
+      } finally {
+        if (!cancelled) setLoading(false);
       }
     }
     load();
     return () => { cancelled = true; };
   }, []);
+
+  if (error) {
+    return (
+      <Box sx={{ p: 3 }}>
+        <Alert severity="error">{error}</Alert>
+      </Box>
+    );
+  }
 
   if (loading) {
     return (

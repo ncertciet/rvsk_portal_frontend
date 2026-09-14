@@ -8,6 +8,7 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import ImageIcon from '@mui/icons-material/Image';
 import { GalleryImage } from './types';
 import { fetchGalleryImages, uploadGalleryImage, deleteGalleryImage } from './homeApi';
+import { getApiErrorMessage } from '../../../services/apiError';
 
 export default function VskImageUpload() {
   const [file, setFile] = useState<File | null>(null);
@@ -27,8 +28,13 @@ export default function VskImageUpload() {
   }, []);
 
   async function loadImages() {
-    const data = await fetchGalleryImages();
-    setImages(data);
+    try {
+      const data = await fetchGalleryImages();
+      setImages(data);
+    } catch (err) {
+      setImages([]);
+      setSnackbar({ open: true, message: getApiErrorMessage(err, 'Failed to load gallery images'), severity: 'error' });
+    }
   }
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {

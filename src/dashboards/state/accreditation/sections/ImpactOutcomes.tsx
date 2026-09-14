@@ -4,6 +4,7 @@ import { Box, Grid, Typography, Alert } from '@mui/material';
 import { KpiCard, KpiDonutChart, KpiTable } from '../components';
 import type { KpiTableColumn, DonutChartDataItem } from '../components';
 import { accreditationApi } from '../api';
+import { getApiErrorMessage } from '../../../../services/apiError';
 
 // ─── TYPES ───────────────────────────────────────────────────────────────────
 
@@ -82,7 +83,7 @@ export default function ImpactOutcomes() {
         }
       } catch (err: any) {
         if (!cancelled) {
-          setError(err?.message || 'Failed to fetch Impact & Outcomes data');
+          setError(getApiErrorMessage(err, 'Failed to fetch Impact & Outcomes data'));
         }
       } finally {
         if (!cancelled) {

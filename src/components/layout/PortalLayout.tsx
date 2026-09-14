@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+﻿import { useState, useEffect } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import {
   Box, Drawer, List, ListItemButton, ListItemIcon, ListItemText,
@@ -26,6 +26,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { logout } from '../../store/authSlice';
 import { RootState } from '../../store';
 import apiClient from '../../services/apiClient';
+import { getApiErrorMessage } from '../../services/apiError';
 
 interface Props { portalType: 'rvsk' | 'vsk'; }
 
@@ -86,65 +87,6 @@ const vskNav: NavItem[] = [
   { label: 'Dashboard', icon: <DashboardIcon />, path: '/vsk/dashboard' },
 ];
 
-// Fallback menu when API is unavailable (matches V27 seed for Super_Admin)
-const FALLBACK_NAV: NavItem[] = [
-  { label: 'Home', icon: <HomeIcon />, path: '/rvsk/home' },
-  { label: 'Dashboard', icon: <DashboardIcon />, path: '/rvsk/dashboard' },
-  { label: 'Attendance', icon: <SchoolIcon />, path: '/rvsk/dashboard/attendance/summary', children: [
-    { label: 'Summary', icon: <DashboardIcon />, path: '/rvsk/dashboard/attendance/summary' },
-    { label: 'Detailed Data', icon: <DashboardIcon />, path: '/rvsk/dashboard/attendance/detailed' },
-    { label: 'Trends', icon: <DashboardIcon />, path: '/rvsk/dashboard/attendance/trends' },
-    { label: 'Report View', icon: <DashboardIcon />, path: '/rvsk/dashboard/attendance/report' },
-    { label: 'Table View', icon: <DashboardIcon />, path: '/rvsk/dashboard/attendance/table' },
-    { label: 'School Directory', icon: <DashboardIcon />, path: '/rvsk/dashboard/attendance/school' },
-    { label: 'Teacher Registry', icon: <DashboardIcon />, path: '/rvsk/dashboard/attendance/teacher' },
-    { label: 'Student Registry', icon: <DashboardIcon />, path: '/rvsk/dashboard/attendance/student' },
-    { label: 'Monthly Details', icon: <DashboardIcon />, path: '/rvsk/dashboard/attendance/monthly' },
-    { label: 'Analysis', icon: <DashboardIcon />, path: '/rvsk/dashboard/attendance/analysis' },
-  ]},
-  { label: 'Assessment', icon: <AssessmentIcon />, path: '/rvsk/dashboard/assessment/overview', children: [
-    { label: 'Executive Overview', icon: <DashboardIcon />, path: '/rvsk/dashboard/assessment/overview' },
-    { label: 'Student Demographics', icon: <DashboardIcon />, path: '/rvsk/dashboard/assessment/demographics' },
-    { label: 'Subject & Curriculum', icon: <DashboardIcon />, path: '/rvsk/dashboard/assessment/subjects' },
-    { label: 'Trends & Progression', icon: <DashboardIcon />, path: '/rvsk/dashboard/assessment/trends' },
-    { label: 'Rankings', icon: <DashboardIcon />, path: '/rvsk/dashboard/assessment/rankings' },
-    { label: 'Data Quality', icon: <DashboardIcon />, path: '/rvsk/dashboard/assessment/quality' },
-  ]},
-  { label: 'Schemes', icon: <AccountBalanceIcon />, path: '/rvsk/dashboard/pm-shri' },
-  { label: 'Accreditation', icon: <VerifiedIcon />, path: '/rvsk/dashboard/accreditation/programme', children: [
-    { label: 'Programme & Framework', icon: <DashboardIcon />, path: '/rvsk/dashboard/accreditation/programme' },
-    { label: 'Coverage & Reach', icon: <DashboardIcon />, path: '/rvsk/dashboard/accreditation/coverage' },
-    { label: 'Process & Operations', icon: <DashboardIcon />, path: '/rvsk/dashboard/accreditation/process' },
-    { label: 'Data Quality', icon: <DashboardIcon />, path: '/rvsk/dashboard/accreditation/data-quality' },
-    { label: 'Impact & Outcomes', icon: <DashboardIcon />, path: '/rvsk/dashboard/accreditation/impact' },
-  ]},
-  { label: 'VSK Management', icon: <ApartmentIcon />, path: '/rvsk/vsk-details', children: [
-    { label: 'VSK Details', icon: <ApartmentIcon />, path: '/rvsk/vsk-details' },
-    { label: 'VSK Admin', icon: <AdminPanelSettingsIcon />, path: '/rvsk/vsk-admin' },
-    { label: 'Gallery Upload', icon: <DashboardIcon />, path: '/rvsk/gallery/upload' },
-  ]},
-  { label: 'Forms', icon: <DynamicFormIcon />, path: '/rvsk/form-builder', children: [
-    { label: 'Form Builder', icon: <DynamicFormIcon />, path: '/rvsk/form-builder' },
-    { label: 'My Forms', icon: <DashboardIcon />, path: '/rvsk/my-forms' },
-  ]},
-  { label: 'Grievances', icon: <DescriptionIcon />, path: '/rvsk/grievances', children: [
-    { label: 'Dashboard', icon: <DashboardIcon />, path: '/rvsk/grievances' },
-    { label: 'Raise Grievance', icon: <DashboardIcon />, path: '/rvsk/grievances/raise' },
-    { label: 'All Grievances', icon: <DashboardIcon />, path: '/rvsk/grievances/list' },
-    { label: 'Categories', icon: <DashboardIcon />, path: '/rvsk/grievances/categories' },
-  ]},
-  { label: 'Administration', icon: <AdminPanelSettingsIcon />, path: '/rvsk/admin/users', children: [
-    { label: 'User Management', icon: <PersonIcon />, path: '/rvsk/admin/users' },
-    { label: 'Module Admin', icon: <DashboardIcon />, path: '/rvsk/admin/modules' },
-    { label: 'Page Admin', icon: <DashboardIcon />, path: '/rvsk/admin/pages' },
-    { label: 'Permission Admin', icon: <DashboardIcon />, path: '/rvsk/admin/permissions' },
-  ]},
-  { label: 'My Account', icon: <PersonIcon />, path: '/rvsk/profile', children: [
-    { label: 'My Profile', icon: <PersonIcon />, path: '/rvsk/profile' },
-    { label: 'Change Password', icon: <DashboardIcon />, path: '/rvsk/change-password' },
-  ]},
-];
-
 export default function PortalLayout({ portalType }: Props) {
   const navigate = useNavigate();
   const location = useLocation();
@@ -154,8 +96,9 @@ export default function PortalLayout({ portalType }: Props) {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [expandedItems, setExpandedItems] = useState<string[]>([]);
 
-  // Dynamic menu state
-  const [navItems, setNavItems] = useState<NavItem[]>(portalType === 'vsk' ? vskNav : FALLBACK_NAV);
+  // Dynamic menu state. VSK uses a static nav; RVSK is strictly DB-driven
+  // (no fake fallback menu â€” a failure must surface so it can be fixed).
+  const [navItems, setNavItems] = useState<NavItem[]>(portalType === 'vsk' ? vskNav : []);
   const [menuLoading, setMenuLoading] = useState(portalType === 'rvsk');
   const [menuError, setMenuError] = useState<string | null>(null);
 
@@ -170,14 +113,13 @@ export default function PortalLayout({ portalType }: Props) {
           setNavItems(apiTreeToNavItems(tree.modules));
           setMenuError(null);
         } else {
-          setNavItems(FALLBACK_NAV);
-          setMenuError('Menu tree empty — using fallback');
+          setNavItems([]);
+          setMenuError('No menu items are available for your account.');
         }
       })
       .catch((err) => {
-        console.warn('[Menu] API failed:', err?.response?.status || err?.message);
-        setNavItems(FALLBACK_NAV);
-        setMenuError('API unavailable — using fallback menu');
+        setNavItems([]);
+        setMenuError(getApiErrorMessage(err, 'Unable to load the menu. Please try again.'));
       })
       .finally(() => setMenuLoading(false));
   }, [portalType]);
