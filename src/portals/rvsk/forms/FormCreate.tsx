@@ -218,7 +218,7 @@ export default function FormCreate() {
         };
         const res = await apiClient.post('/forms', payload);
         targetFormId = res.data.id;
-        setFormId(targetFormId);
+        setFormId(targetFormId ?? null);
         
         // Save questions
         for (let i = 0; i < questions.length; i++) {
@@ -243,7 +243,7 @@ export default function FormCreate() {
     setSaving(true);
     try {
       const payload = {
-        stateCodes: states,
+        stateKeys: states,
         dueDate: publishDueDate ? `${publishDueDate}T23:59:59` : (dueDate ? `${dueDate}T23:59:59` : null),
       };
       await apiClient.post(`/forms/${targetFormId}/publish`, payload);

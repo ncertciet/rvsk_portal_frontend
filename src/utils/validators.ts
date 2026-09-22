@@ -12,6 +12,31 @@ export function validateEmail(email: string): string | null {
   return null;
 }
 
+// ─── Username ──────────────────────────────────────────────────────────────
+// RVSK-USR-MGMT-001.4 #3: username may be an email OR a plain string.
+// Not validated as strict email; only basic presence/length/charset checks.
+export function validateUsername(value: string): string | null {
+  if (!value.trim()) return 'Username is required';
+  if (value.trim().length < 3) return 'Username must be at least 3 characters';
+  if (value.length > 255) return 'Username must be less than 255 characters';
+  if (/\s/.test(value.trim())) return 'Username cannot contain spaces';
+  return null;
+}
+
+// ─── Optional email ──────────────────────────────────────────────────────────
+// For fields like User Email that are optional but must be valid when present.
+export function validateOptionalEmail(email: string): string | null {
+  if (!email || !email.trim()) return null;
+  return validateEmail(email);
+}
+
+// ─── Optional mobile ─────────────────────────────────────────────────────────
+// Mobile Number is optional; validate format only when a value is present.
+export function validateOptionalMobile(value: string): string | null {
+  if (!value || !value.trim()) return null;
+  return validatePhone(value);
+}
+
 // ─── Phone ───────────────────────────────────────────────────────────────────
 const PHONE_REGEX = /^[6-9]\d{9}$/;
 

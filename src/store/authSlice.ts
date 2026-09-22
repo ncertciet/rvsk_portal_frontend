@@ -5,8 +5,14 @@ interface PortalUser {
   username: string;
   displayName: string;
   role: string;
-  stateCode: string | null;
-  districtCode: string | null;
+  /** Legacy 2-char state code, kept for backward-compatible screens (e.g. VSK). */
+  stateCode?: string | null;
+  stateKey: string | null;
+  stateName: string | null;
+  districtKey: string | null;
+  districtName: string | null;
+  blockKey: string | null;
+  blockName: string | null;
   access?: Record<string, string[]>;
 }
 

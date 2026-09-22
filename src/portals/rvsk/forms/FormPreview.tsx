@@ -1,10 +1,12 @@
+import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   Box, Typography, Paper, TextField, RadioGroup, Radio, FormControlLabel,
   FormGroup, Checkbox, Select, MenuItem, FormControl, InputLabel, Button, Divider,
+  CircularProgress,
 } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
-import { DUMMY_FORMS } from './dummyData';
+import apiClient from '../../../services/apiClient';
 import { FormQuestion } from './types';
 
 function renderQuestionPreview(question: FormQuestion, index: number) {
@@ -86,15 +88,72 @@ function renderQuestionPreview(question: FormQuestion, index: number) {
   }
 }
 
+interface PreviewForm {
+  title: string;
+  description?: string | null;
+  instructions?: string | null;
+  questions: FormQuestion[];
+}
+
 export default function FormPreview() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
 
-  // TODO: Fetch form from API
-  // const form = await apiClient.get(`/forms/${id}`);
-  const form = DUMMY_FORMS.find((f) => f.id === id);
+  const [form, setForm] = useState<PreviewForm | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
 
-  if (!form) {
+  useEffect(() => {
+    if (!id) {
+      setError(true);
+      setLoading(false);
+      return;
+    }
+    apiClient
+      .get(`/forms/${id}`)
+      .then((res) => {
+        const data = res.data;
+        // Map the API question shape (isRequired, optionsJson) to the
+        // FormQuestion shape the preview renderer expects (required, options).
+        const questions: FormQuestion[] = (data.questions || []).map((q: any) => {
+          let options: string[] = [];
+          if (q.optionsJson) {
+            try {
+              const parsed = JSON.parse(q.optionsJson);
+              if (Array.isArray(parsed)) options = parsed;
+            } catch {
+              options = [];
+            }
+          }
+          return {
+            id: q.id,
+            questionText: q.questionText,
+            fieldType: q.fieldType,
+            required: !!q.isRequired,
+            helpText: q.helpText || '',
+            options,
+          } as FormQuestion;
+        });
+        setForm({
+          title: data.title,
+          description: data.description,
+          instructions: data.instructions,
+          questions,
+        });
+      })
+      .catch(() => setError(true))
+      .finally(() => setLoading(false));
+  }, [id]);
+
+  if (loading) {
+    return (
+      <Box sx={{ p: 3, textAlign: 'center' }}>
+        <CircularProgress size={28} />
+      </Box>
+    );
+  }
+
+  if (error || !form) {
     return (
       <Box sx={{ p: 3 }}>
         <Typography color="error">Form not found.</Typography>

@@ -113,7 +113,7 @@ export default function AdminUserList() {
                 <TableCell sx={{ fontWeight: 500 }}>{user.displayName}</TableCell>
                 <TableCell sx={{ fontFamily: 'monospace', fontSize: 12 }}>{user.username}</TableCell>
                 <TableCell><Chip label={user.role} size="small" variant="outlined" /></TableCell>
-                <TableCell>{user.stateCode || '—'}</TableCell>
+                <TableCell>{user.stateName || '—'}</TableCell>
                 <TableCell>
                   <Chip label={user.isActive ? 'Active' : 'Inactive'} size="small"
                     color={user.isActive ? 'success' : 'error'} />

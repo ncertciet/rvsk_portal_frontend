@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Box, Typography, Paper, TextField, Button, Alert, LinearProgress, List, ListItem, ListItemIcon, ListItemText } from '@mui/material';
+import { Box, Typography, Paper, TextField, Button, Alert, LinearProgress, List, ListItem, ListItemIcon, ListItemText, Grid } from '@mui/material';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import CancelIcon from '@mui/icons-material/Cancel';
 import { useNavigate } from 'react-router-dom';
@@ -7,7 +7,10 @@ import { useDispatch, useSelector } from 'react-redux';
 import { loginSuccess } from '../../store/authSlice';
 import { RootState } from '../../store';
 import apiClient from '../../services/apiClient';
-import { validatePhone, validatePassword, validateDesignation, validateDepartment } from '../../utils/validators';
+import {
+  validatePhone, validatePassword, validateEmail,
+  validateOptionalEmail, validateOptionalMobile,
+} from '../../utils/validators';
 
 export default function ProfileSetup() {
   const navigate = useNavigate();
@@ -16,8 +19,11 @@ export default function ProfileSetup() {
   const token = useSelector((state: RootState) => state.auth.accessToken);
 
   const [phone, setPhone] = useState('');
+  const [mobileNumber, setMobileNumber] = useState('');
   const [designation, setDesignation] = useState('');
   const [department, setDepartment] = useState('');
+  const [userEmail, setUserEmail] = useState('');
+  const [contactEmail, setContactEmail] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
@@ -26,21 +32,25 @@ export default function ProfileSetup() {
 
   const pwValidation = validatePassword(newPassword);
   const phoneError = touched.phone ? validatePhone(phone) : null;
-  const designationError = touched.designation ? validateDesignation(designation) : null;
-  const departmentError = touched.department ? validateDepartment(department) : null;
+  const mobileError = touched.mobile ? validateOptionalMobile(mobileNumber) : null;
+  const contactEmailError = touched.contactEmail ? validateEmail(contactEmail) : null;
+  const userEmailError = touched.userEmail ? validateOptionalEmail(userEmail) : null;
   const confirmError = touched.confirm && newPassword !== confirmPassword ? 'Passwords do not match' : null;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-    setTouched({ phone: true, designation: true, department: true, password: true, confirm: true });
+    setTouched({ phone: true, mobile: true, contactEmail: true, userEmail: true, password: true, confirm: true });
 
-    const phoneErr = validatePhone(phone);
-    const desigErr = validateDesignation(designation);
-    const deptErr = validateDepartment(department);
+    const fieldErr = [
+      validatePhone(phone),          // mandatory
+      validateEmail(contactEmail),   // mandatory (spec .6)
+      validateOptionalMobile(mobileNumber),
+      validateOptionalEmail(userEmail),
+    ].filter(Boolean);
 
-    if (phoneErr || desigErr || deptErr) {
-      setError('Please fix the validation errors above');
+    if (fieldErr.length > 0) {
+      setError(fieldErr[0] as string);
       return;
     }
     if (!pwValidation.isValid) {
@@ -54,7 +64,15 @@ export default function ProfileSetup() {
 
     setLoading(true);
     try {
-      await apiClient.put('/auth/complete-profile', { phone: phone.trim(), designation: designation.trim(), department: department.trim(), newPassword });
+      await apiClient.put('/auth/complete-profile', {
+        phone: phone.trim(),
+        mobileNumber: mobileNumber.trim() || undefined,
+        designation: designation.trim() || undefined,
+        department: department.trim() || undefined,
+        userEmail: userEmail.trim() || undefined,
+        contactEmail: contactEmail.trim(),
+        newPassword,
+      });
       if (user && token) {
         dispatch(loginSuccess({ accessToken: token, user: { ...user, access: user.access } }));
       }
@@ -66,7 +84,7 @@ export default function ProfileSetup() {
 
   return (
     <Box sx={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', bgcolor: '#F8FAFC', p: 3 }}>
-      <Paper sx={{ p: 4, maxWidth: 520, width: '100%' }}>
+      <Paper sx={{ p: 4, maxWidth: 560, width: '100%' }}>
         <Typography variant="h5" fontWeight={700} gutterBottom>Complete Your Profile</Typography>
         <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
           Welcome! Please complete your profile and set a new password before accessing the portal.
@@ -75,20 +93,38 @@ export default function ProfileSetup() {
         {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
 
         <form onSubmit={handleSubmit}>
-          <TextField fullWidth label="Phone Number" value={phone}
-            onChange={e => setPhone(e.target.value)} onBlur={() => setTouched(t => ({ ...t, phone: true }))}
-            error={!!phoneError} helperText={phoneError || 'Indian mobile: 10 digits starting with 6-9'}
-            required sx={{ mb: 2 }} placeholder="9876543210" inputProps={{ maxLength: 10 }} />
-
-          <TextField fullWidth label="Designation" value={designation}
-            onChange={e => setDesignation(e.target.value)} onBlur={() => setTouched(t => ({ ...t, designation: true }))}
-            error={!!designationError} helperText={designationError}
-            required sx={{ mb: 2 }} placeholder="State Coordinator" />
-
-          <TextField fullWidth label="Department" value={department}
-            onChange={e => setDepartment(e.target.value)} onBlur={() => setTouched(t => ({ ...t, department: true }))}
-            error={!!departmentError} helperText={departmentError}
-            required sx={{ mb: 2 }} placeholder="Education Department" />
+          <Grid container spacing={2} sx={{ mb: 1 }}>
+            <Grid item xs={12} sm={6}>
+              <TextField fullWidth label="Phone Number" value={phone}
+                onChange={e => setPhone(e.target.value)} onBlur={() => setTouched(t => ({ ...t, phone: true }))}
+                error={!!phoneError} helperText={phoneError || 'Required'}
+                required placeholder="9876543210" inputProps={{ maxLength: 10 }} />
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <TextField fullWidth label="Mobile Number" value={mobileNumber}
+                onChange={e => setMobileNumber(e.target.value)} onBlur={() => setTouched(t => ({ ...t, mobile: true }))}
+                error={!!mobileError} helperText={mobileError || 'Optional'}
+                placeholder="9876543210" inputProps={{ maxLength: 10 }} />
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <TextField fullWidth label="Designation" value={designation}
+                onChange={e => setDesignation(e.target.value)} placeholder="State Coordinator" />
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <TextField fullWidth label="Department" value={department}
+                onChange={e => setDepartment(e.target.value)} placeholder="Education Department" />
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <TextField fullWidth label="User Email" value={userEmail}
+                onChange={e => setUserEmail(e.target.value)} onBlur={() => setTouched(t => ({ ...t, userEmail: true }))}
+                error={!!userEmailError} helperText={userEmailError || 'Optional'} type="email" />
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <TextField fullWidth label="Contact Email" value={contactEmail}
+                onChange={e => setContactEmail(e.target.value)} onBlur={() => setTouched(t => ({ ...t, contactEmail: true }))}
+                error={!!contactEmailError} helperText={contactEmailError || 'Required'} type="email" required />
+            </Grid>
+          </Grid>
 
           <Typography variant="subtitle2" sx={{ mt: 2, mb: 1 }}>Set New Password</Typography>
           <TextField fullWidth label="New Password" type="password" value={newPassword}

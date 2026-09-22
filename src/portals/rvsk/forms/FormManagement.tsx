@@ -81,7 +81,7 @@ export default function FormManagement() {
     if (!selectedFormId) return;
     try {
       await apiClient.post(`/forms/${selectedFormId}/publish`, {
-        stateCodes: states,
+        stateKeys: states,
         dueDate: dueDate ? `${dueDate}T23:59:59` : null,
       });
       setSnackbar({ open: true, message: 'Form published successfully!', severity: 'success' });
