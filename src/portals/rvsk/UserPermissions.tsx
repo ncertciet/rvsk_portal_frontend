@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import {
   Box, Typography, Paper, TextField, Button, Grid, Checkbox, FormControlLabel,
   Accordion, AccordionSummary, AccordionDetails, Chip, Alert, CircularProgress,

@@ -67,10 +67,6 @@ export default function ImplementationStatusTab({ selectedState, states }: Imple
     });
   };
 
-  const getMapStateMatch = (geoName: string): boolean => {
-    return findStateData(geoName) !== undefined;
-  };
-
   const getOption = () => {
     if (!mapRegistered || !geoData) {
       return {};

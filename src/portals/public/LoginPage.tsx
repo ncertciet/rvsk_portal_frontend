@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import {
@@ -18,27 +18,15 @@ import VisibilityIcon from '@mui/icons-material/Visibility';
 import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
 import { authApi } from '../../services/authApi';
 import { loginSuccess } from '../../store/authSlice';
-
-/**
- * Generate a simple math captcha (two numbers 1-9, addition).
- */
-function generateCaptcha() {
-  const a = Math.floor(Math.random() * 9) + 1;
-  const b = Math.floor(Math.random() * 9) + 1;
-  return { a, b, answer: a + b };
-}
+import ForgotPasswordWizard from './ForgotPasswordWizard';
 
 export default function LoginPage() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [captchaInput, setCaptchaInput] = useState('');
-  const [captcha, setCaptcha] = useState(generateCaptcha);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [showForgotPassword, setShowForgotPassword] = useState(false);
-  const [forgotEmail, setForgotEmail] = useState('');
-  const [forgotSuccess, setForgotSuccess] = useState('');
 
   const navigate = useNavigate();
   const dispatch = useDispatch();
@@ -80,28 +68,13 @@ export default function LoginPage() {
         }
       } else {
         setError(data.message || 'Login failed. Please check your credentials.');
-        setCaptcha(generateCaptcha());
-        setCaptchaInput('');
       }
     } catch (err: any) {
       const msg = err?.response?.data?.message || 'Invalid credentials. Please try again.';
       setError(msg);
-      setCaptcha(generateCaptcha());
-      setCaptchaInput('');
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleForgotPassword = (e: React.FormEvent) => {
-    e.preventDefault();
-    // Placeholder — in production this would call a reset password API
-    setForgotSuccess(`Password reset link sent to ${forgotEmail}. Please check your email.`);
-    setTimeout(() => {
-      setShowForgotPassword(false);
-      setForgotSuccess('');
-      setForgotEmail('');
-    }, 3000);
   };
 
   return (
@@ -258,65 +231,7 @@ export default function LoginPage() {
             </Box>
           </>
         ) : (
-          /* Forgot Password Form */
-          <>
-            <Box sx={{ textAlign: 'center', mb: 3 }}>
-              <Typography sx={{ fontSize: '1.5rem', fontWeight: 800, color: '#111827', mb: 0.5 }}>
-                Reset Password
-              </Typography>
-              <Typography sx={{ fontSize: '0.85rem', color: '#6B7280' }}>
-                Enter your registered email to receive a password reset link
-              </Typography>
-            </Box>
-
-            {forgotSuccess && <Alert severity="success" sx={{ mb: 2, borderRadius: 2 }}>{forgotSuccess}</Alert>}
-
-            <form onSubmit={handleForgotPassword}>
-              <TextField
-                fullWidth
-                label="Email ID"
-                placeholder="enter your registered email ID"
-                type="email"
-                value={forgotEmail}
-                onChange={(e) => setForgotEmail(e.target.value)}
-                required
-                autoFocus
-                sx={{
-                  mb: 3,
-                  '& .MuiOutlinedInput-root': { borderRadius: 2 },
-                  '& .MuiInputLabel-root': { color: '#1E3A8A', fontWeight: 500 },
-                }}
-              />
-
-              <Button
-                fullWidth
-                variant="contained"
-                type="submit"
-                sx={{
-                  py: 1.5,
-                  borderRadius: '28px',
-                  fontWeight: 700,
-                  fontSize: '0.95rem',
-                  letterSpacing: '1px',
-                  textTransform: 'uppercase',
-                  bgcolor: '#1A1F7E',
-                  '&:hover': { bgcolor: '#15195F' },
-                }}
-              >
-                SEND RESET LINK
-              </Button>
-            </form>
-
-            <Box sx={{ textAlign: 'center', mt: 3 }}>
-              <Link
-                component="button"
-                onClick={() => { setShowForgotPassword(false); setForgotSuccess(''); }}
-                sx={{ fontSize: '0.85rem', color: '#1E3A8A', textDecoration: 'underline', cursor: 'pointer' }}
-              >
-                ← Back to Sign In
-              </Link>
-            </Box>
-          </>
+          <ForgotPasswordWizard onBackToLogin={() => setShowForgotPassword(false)} />
         )}
       </Paper>
     </Box>

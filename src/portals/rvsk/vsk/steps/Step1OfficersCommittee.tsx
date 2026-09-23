@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import {
   Box, Typography, TextField, Grid, Card, CardContent, Button,
-  Checkbox, FormControlLabel, Table, TableBody, TableCell,
+  FormControlLabel, Table, TableBody, TableCell,
   TableContainer, TableHead, TableRow, Paper, IconButton,
   Divider, Tooltip, Dialog, DialogTitle, DialogContent,
   DialogActions, CircularProgress, Snackbar, Alert,
@@ -469,8 +469,6 @@ export default function Step1OfficersCommittee({
 
   const renderOfficerBlock = (role: OfficerRole) => {
     const officer = officers[role];
-    const showSameAs = false; // Removed per requirement
-    const sameAsChecked = false;
 
     return (
       <Card key={role} sx={{ mb: 3, borderRadius: 2, border: '1px solid #E2E8F0' }}>

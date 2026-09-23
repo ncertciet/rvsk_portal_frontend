@@ -25,6 +25,9 @@ import AdminEditUser from './portals/rvsk/AdminEditUser';
 import ModuleManagement from './portals/rvsk/admin/ModuleManagement';
 import PageManagement from './portals/rvsk/admin/PageManagement';
 import PermissionManagement from './portals/rvsk/admin/PermissionManagement';
+import NotificationConfig from './portals/rvsk/admin/NotificationConfig';
+import NotificationBranding from './portals/rvsk/admin/NotificationBranding';
+import NotificationLogs from './portals/rvsk/admin/NotificationLogs';
 import VskHome from './portals/vsk/VskHome';
 import VskDashboard from './portals/vsk/VskDashboard';
 import VskFormSubmissions from './portals/vsk/VskFormSubmissions';
@@ -113,6 +116,9 @@ function App() {
           <Route path="/rvsk/admin/modules" element={<ModuleManagement />} />
           <Route path="/rvsk/admin/pages" element={<PageManagement />} />
           <Route path="/rvsk/admin/permissions" element={<PermissionManagement />} />
+          <Route path="/rvsk/admin/notifications" element={<NotificationConfig />} />
+          <Route path="/rvsk/admin/notifications/branding" element={<NotificationBranding />} />
+          <Route path="/rvsk/admin/notifications/logs" element={<NotificationLogs />} />
           <Route path="/rvsk/dashboard" element={<RvskDashboard />} />
 
           {/* A1 - Attendance: sub-routes with shared filter bar */}

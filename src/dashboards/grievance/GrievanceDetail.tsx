@@ -10,7 +10,6 @@ import {
   CardContent,
   Button,
   TextField,
-  Divider,
   CircularProgress,
   Alert,
   Chip,
@@ -24,7 +23,7 @@ import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import AttachFileIcon from '@mui/icons-material/AttachFile';
 import DownloadIcon from '@mui/icons-material/Download';
 import apiClient from '../../services/apiClient';
-import { GRIEVANCE_STATUSES, SPOC_ROLES, ADMIN_ROLES } from './constants';
+import { GRIEVANCE_STATUSES, SPOC_ROLES } from './constants';
 import StatusBadge from './StatusBadge';
 import ActivityTimeline from './ActivityTimeline';
 

@@ -3,12 +3,6 @@ import { useOutletContext } from 'react-router-dom';
 import {
   Box,
   Typography,
-  List,
-  ListItemButton,
-  ListItemIcon,
-  ListItemText,
-  Select,
-  MenuItem,
   Button,
   Paper,
   Grid,
@@ -22,13 +16,10 @@ import {
   InputAdornment,
   Chip,
   Pagination,
-  FormControl,
-  InputLabel,
   CircularProgress,
 } from '@mui/material';
 import ReactECharts from 'echarts-for-react';
 import SearchIcon from '@mui/icons-material/Search';
-import RestartAltIcon from '@mui/icons-material/RestartAlt';
 import apiClient from '../../../services/apiClient';
 
 // ─── TYPES ───────────────────────────────────────────────────────────────────
@@ -44,34 +35,10 @@ type TabId =
   | 'monthly'
   | 'analysis';
 
-interface SidebarItem {
-  id: TabId;
-  label: string;
-  icon: string;
-}
-
 // ─── CONSTANTS ───────────────────────────────────────────────────────────────
-const SIDEBAR_WIDTH = 220;
-const HEADER_HEIGHT = 56;
-const FILTER_HEIGHT = 52;
-
 const PURPLE_PRIMARY = '#5B21B6';
 const PURPLE_DARK = '#3B0764';
-const PURPLE_LIGHT = '#7C3AED';
 const PURPLE_BG = '#F5F3FF';
-
-const SIDEBAR_ITEMS: SidebarItem[] = [
-  { id: 'summary', label: 'Summary', icon: '📊' },
-  { id: 'detailed', label: 'Detailed Data', icon: '📋' },
-  { id: 'trends', label: 'Trends', icon: '📈' },
-  { id: 'report', label: 'Report View', icon: '📄' },
-  { id: 'table', label: 'Table View', icon: '📊' },
-  { id: 'school', label: 'School Directory', icon: '🏫' },
-  { id: 'teacher', label: 'Teacher Registry', icon: '👨‍🏫' },
-  { id: 'student', label: 'Student Registry', icon: '👩‍🎓' },
-  { id: 'monthly', label: 'Monthly Details', icon: '📅' },
-  { id: 'analysis', label: 'Attendance Analysis', icon: '🔍' },
-];
 
 
 // ─── REUSABLE COMPONENTS ─────────────────────────────────────────────────────
@@ -102,226 +69,14 @@ function KpiCard({ title, value, subtitle, color = PURPLE_PRIMARY }: { title: st
   );
 }
 
-function DonutChart({ percent, title, centerLabel, colors }: { percent: number; title: string; centerLabel?: string; colors?: string[] }) {
-  const option = {
-    tooltip: { trigger: 'item' },
-    title: { text: title, left: 'center', top: 0, textStyle: { fontSize: 13, fontWeight: 600 } },
-    series: [{
-      type: 'pie',
-      radius: ['55%', '75%'],
-      center: ['50%', '58%'],
-      avoidLabelOverlap: false,
-      label: {
-        show: true,
-        position: 'center',
-        formatter: centerLabel || `${percent.toFixed(1)}%`,
-        fontSize: 18,
-        fontWeight: 'bold',
-        color: PURPLE_PRIMARY,
-      },
-      data: [
-        { value: percent, name: 'Active', itemStyle: { color: colors?.[0] || PURPLE_PRIMARY } },
-        { value: 100 - percent, name: 'Remaining', itemStyle: { color: colors?.[1] || '#E5E7EB' } },
-      ],
-    }],
-  };
-  return <ReactECharts option={option} style={{ height: 200 }} />;
-}
-
-
-// ─── HEADER COMPONENT ────────────────────────────────────────────────────────
-function AttendanceHeader() {
-  return (
-    <Box sx={{
-      height: HEADER_HEIGHT,
-      background: `linear-gradient(135deg, ${PURPLE_DARK} 0%, ${PURPLE_PRIMARY} 100%)`,
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      px: 3,
-      color: '#fff',
-    }}>
-      <Typography variant="subtitle2" fontWeight={700} sx={{ letterSpacing: 0.5 }}>
-        Rashtriya Vidya Samiksha Kendra — Attendance Dashboard
-      </Typography>
-      <Chip
-        label="NATIONAL LEVEL"
-        size="small"
-        sx={{ bgcolor: '#F59E0B', color: '#fff', fontWeight: 700, fontSize: 11, height: 24 }}
-      />
-    </Box>
-  );
-}
-
-// ─── FILTER BAR COMPONENT ────────────────────────────────────────────────────
-interface FilterBarProps {
-  selectedDate: string;
-  setSelectedDate: (v: string) => void;
-  selectedStateId: number | '';
-  setSelectedStateId: (v: number | '') => void;
-  selectedDistrictId: string;
-  setSelectedDistrictId: (v: string) => void;
-  selectedBlockId: string;
-  setSelectedBlockId: (v: string) => void;
-  selectedClusterId: string;
-  setSelectedClusterId: (v: string) => void;
-  states: any[];
-  districts: any[];
-  blocks: any[];
-  clusters: any[];
-  schools: any[];
-  onReset: () => void;
-}
-
-function AttendanceFilters({
-  selectedDate, setSelectedDate,
-  selectedStateId, setSelectedStateId,
-  selectedDistrictId, setSelectedDistrictId,
-  selectedBlockId, setSelectedBlockId,
-  selectedClusterId, setSelectedClusterId,
-  states, districts, blocks, clusters, schools,
-  onReset,
-}: FilterBarProps) {
-  return (
-    <Box sx={{
-      height: FILTER_HEIGHT,
-      bgcolor: '#fff',
-      borderBottom: '1px solid #E5E7EB',
-      display: 'flex',
-      alignItems: 'center',
-      gap: 1.5,
-      px: 2,
-      overflowX: 'auto',
-    }}>
-      <TextField
-        type="date"
-        size="small"
-        label="Date"
-        value={selectedDate}
-        onChange={(e) => setSelectedDate(e.target.value)}
-        InputLabelProps={{ shrink: true }}
-        sx={{ minWidth: 140 }}
-      />
-      <FormControl size="small" sx={{ minWidth: 120 }}>
-        <InputLabel>State/UT</InputLabel>
-        <Select
-          value={selectedStateId}
-          label="State/UT"
-          onChange={(e) => setSelectedStateId(e.target.value as number | '')}
-        >
-          <MenuItem value="">All States</MenuItem>
-          {states.map((s: any) => (
-            <MenuItem key={s.STATE_ID} value={s.STATE_ID}>{s.STATE_NAME}</MenuItem>
-          ))}
-        </Select>
-      </FormControl>
-      <FormControl size="small" sx={{ minWidth: 110 }}>
-        <InputLabel>District</InputLabel>
-        <Select
-          value={selectedDistrictId}
-          label="District"
-          onChange={(e) => setSelectedDistrictId(e.target.value as string)}
-        >
-          <MenuItem value="">All Districts</MenuItem>
-          {districts.map((d: any) => (
-            <MenuItem key={d.DISTRICT_ID} value={d.DISTRICT_ID}>{d.DISTRICT_NAME}</MenuItem>
-          ))}
-        </Select>
-      </FormControl>
-      <FormControl size="small" sx={{ minWidth: 100 }}>
-        <InputLabel>Block</InputLabel>
-        <Select
-          value={selectedBlockId}
-          label="Block"
-          onChange={(e) => setSelectedBlockId(e.target.value as string)}
-        >
-          <MenuItem value="">All Blocks</MenuItem>
-          {blocks.map((b: any) => (
-            <MenuItem key={b.BLOCK_ID} value={b.BLOCK_ID}>{b.BLOCK_NAME}</MenuItem>
-          ))}
-        </Select>
-      </FormControl>
-      <FormControl size="small" sx={{ minWidth: 100 }}>
-        <InputLabel>Cluster</InputLabel>
-        <Select
-          value={selectedClusterId}
-          label="Cluster"
-          onChange={(e) => setSelectedClusterId(e.target.value as string)}
-        >
-          <MenuItem value="">All Clusters</MenuItem>
-          {clusters.map((c: any) => (
-            <MenuItem key={c.CLUSTER_ID} value={c.CLUSTER_ID}>{c.CLUSTER_NAME}</MenuItem>
-          ))}
-        </Select>
-      </FormControl>
-      <FormControl size="small" sx={{ minWidth: 110 }}>
-        <InputLabel>School</InputLabel>
-        <Select defaultValue="" label="School">
-          <MenuItem value="">All Schools</MenuItem>
-          {schools.map((s: any) => (
-            <MenuItem key={s.SCHOOL_ID} value={s.SCHOOL_ID}>{s.SCHOOL_NAME}</MenuItem>
-          ))}
-        </Select>
-      </FormControl>
-      <Button
-        variant="contained"
-        size="small"
-        startIcon={<RestartAltIcon />}
-        onClick={onReset}
-        sx={{ bgcolor: '#10B981', '&:hover': { bgcolor: '#059669' }, textTransform: 'none', fontWeight: 600, ml: 'auto' }}
-      >
-        RESET
-      </Button>
-    </Box>
-  );
-}
-
-// ─── SIDEBAR COMPONENT ───────────────────────────────────────────────────────
-function AttendanceSidebar({ activeTab, onTabChange }: { activeTab: TabId; onTabChange: (id: TabId) => void }) {
-  return (
-    <Box sx={{
-      width: SIDEBAR_WIDTH,
-      minHeight: '100%',
-      bgcolor: '#FAFAFA',
-      borderRight: '1px solid #E5E7EB',
-      py: 1,
-    }}>
-      <List disablePadding>
-        {SIDEBAR_ITEMS.map((item) => (
-          <ListItemButton
-            key={item.id}
-            selected={activeTab === item.id}
-            onClick={() => onTabChange(item.id)}
-            sx={{
-              mx: 1,
-              mb: 0.5,
-              borderRadius: 2,
-              '&.Mui-selected': {
-                bgcolor: PURPLE_PRIMARY,
-                color: '#fff',
-                '&:hover': { bgcolor: PURPLE_LIGHT },
-                '& .MuiListItemText-primary': { color: '#fff', fontWeight: 600 },
-              },
-            }}
-          >
-            <ListItemIcon sx={{ minWidth: 32, fontSize: 18 }}>{item.icon}</ListItemIcon>
-            <ListItemText primary={item.label} primaryTypographyProps={{ variant: 'body2', fontWeight: activeTab === item.id ? 600 : 400 }} />
-          </ListItemButton>
-        ))}
-      </List>
-    </Box>
-  );
-}
-
-
 // ─── SUMMARY PAGE ────────────────────────────────────────────────────────────
 function formatIndian(num: number): string {
   return num.toLocaleString('en-IN');
 }
 
-function SummaryPage({ summaryData, regionalLeaders, stateTableData, integrationCoverage, loading }: {
+function SummaryPage({ summaryData, stateTableData, integrationCoverage, loading }: {
   summaryData: any;
-  regionalLeaders: any;
+  regionalLeaders?: any;
   stateTableData: any[];
   integrationCoverage: any;
   loading: boolean;

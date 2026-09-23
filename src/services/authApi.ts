@@ -52,6 +52,50 @@ export const authApi = {
     return apiClient.post('/auth/reset-password', { userId, newPassword });
   },
 
+  // ==================== Forgot-password OTP (RVSK-AUTH-PWDRESET-004) ====================
+  // Public, self-service recovery. The user identifies by USERNAME; the backend
+  // validates it exists (returns "User doesn't exist" otherwise) and emails the
+  // OTP to the account's address. The backend is authoritative for expiry,
+  // cooldown, attempt-cap and single-use. Never persist the OTP or reset token.
+
+  /**
+   * Step 1 — validate the username and request an OTP. Rejects with
+   * "User doesn't exist" when the username is not found.
+   */
+  forgotPasswordRequestOtp: async (username: string) => {
+    return apiClient.post('/auth/forgot-password/request-otp', { username });
+  },
+
+  /**
+   * Step 2 — verify the OTP. On success returns { resetToken } (one-time,
+   * short-lived) which authorizes the reset step. Keep it in memory only.
+   */
+  forgotPasswordVerifyOtp: async (username: string, otp: string) => {
+    return apiClient.post('/auth/forgot-password/verify-otp', { username, otp });
+  },
+
+  /**
+   * Resend an OTP (subject to the server-side cooldown).
+   */
+  forgotPasswordResendOtp: async (username: string) => {
+    return apiClient.post('/auth/forgot-password/resend-otp', { username });
+  },
+
+  /**
+   * Step 3 — set a new password using the reset token from Step 2.
+   */
+  forgotPasswordReset: async (
+    resetToken: string,
+    newPassword: string,
+    confirmPassword: string,
+  ) => {
+    return apiClient.post('/auth/forgot-password/reset', {
+      resetToken,
+      newPassword,
+      confirmPassword,
+    });
+  },
+
   /**
    * Logout: notifies backend to update session state.
    */

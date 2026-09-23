@@ -191,8 +191,6 @@ export default function PageManagement() {
     }
   };
 
-  const selectedModuleLabel = modules.find(m => m.id === selectedModuleId);
-
   return (
     <Box sx={{ p: 3 }}>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>

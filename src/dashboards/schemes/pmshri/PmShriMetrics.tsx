@@ -1,7 +1,6 @@
 import { Box, Typography, Grid, IconButton, Collapse } from '@mui/material';
 import { useState } from 'react';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 
 interface KpiData {
   totalSchools: number;
