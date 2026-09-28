@@ -8,8 +8,10 @@ import {
   validateDisplayName, validateEmail, validateOptionalEmail, validateOptionalMobile,
 } from '../../utils/validators';
 import GeoScopeSelect, { GeoValue, geoLevelForRole } from './GeoScopeSelect';
+import { useRoles } from '../../hooks/useRoles';
 
-const ALL_ROLES: { value: string; label: string }[] = [
+// Static fallback until the dynamic role list loads / if the API is unavailable.
+const FALLBACK_ROLES: { value: string; label: string }[] = [
   { value: 'Super_Admin', label: 'Super Admin' },
   { value: 'RVSK_Admin', label: 'RVSK Admin' },
   { value: 'RVSK_SPOC', label: 'RVSK SPOC' },
@@ -26,6 +28,7 @@ export default function AdminEditUser() {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
   const currentUser = useSelector((state: RootState) => state.auth.user);
+  const { data: rolesData } = useRoles();
 
   const [username, setUsername] = useState('');
   const [displayName, setDisplayName] = useState('');
@@ -42,11 +45,15 @@ export default function AdminEditUser() {
   const [loading, setLoading] = useState(true);
 
   const roleOptions = useMemo(() => {
+    const base =
+      rolesData && rolesData.length > 0
+        ? rolesData.map((r) => ({ value: r.roleCode, label: r.roleName }))
+        : FALLBACK_ROLES;
     if (currentUser?.role === 'RVSK_Admin') {
-      return ALL_ROLES.filter((r) => r.value !== 'Super_Admin');
+      return base.filter((r) => r.value !== 'Super_Admin');
     }
-    return ALL_ROLES;
-  }, [currentUser?.role]);
+    return base;
+  }, [rolesData, currentUser?.role]);
 
   const geoLevel = geoLevelForRole(role);
 

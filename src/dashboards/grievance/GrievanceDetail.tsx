@@ -34,8 +34,9 @@ interface RootState {
       username: string;
       displayName: string;
       role: string;
-      stateCode: string | null;
-      districtCode: string | null;
+      stateKey: string | null;
+      stateName: string | null;
+      districtKey: string | null;
     } | null;
   };
 }

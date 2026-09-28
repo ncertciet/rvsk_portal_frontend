@@ -13,9 +13,26 @@ import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import AddIcon from '@mui/icons-material/Add';
 import { useNavigate } from 'react-router-dom';
 import apiClient from '../../services/apiClient';
+import { useRoles } from '../../hooks/useRoles';
+
+// Static fallback for the role filter until the dynamic list loads.
+const FALLBACK_ROLE_FILTER: { value: string; label: string }[] = [
+  { value: 'Super_Admin', label: 'Super Admin' },
+  { value: 'RVSK_Admin', label: 'RVSK Admin' },
+  { value: 'Ministry_Admin', label: 'Ministry Admin' },
+  { value: 'State_Admin', label: 'State Admin' },
+  { value: 'District_Admin', label: 'District Admin' },
+  { value: 'Block_Admin', label: 'Block Admin' },
+  { value: 'Viewer', label: 'Viewer' },
+];
 
 export default function AdminUserList() {
   const navigate = useNavigate();
+  const { data: rolesData } = useRoles();
+  const roleFilterOptions =
+    rolesData && rolesData.length > 0
+      ? rolesData.map((r) => ({ value: r.roleCode, label: r.roleName }))
+      : FALLBACK_ROLE_FILTER;
   const [users, setUsers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -84,13 +101,9 @@ export default function AdminUserList() {
           <InputLabel>Role</InputLabel>
           <Select value={roleFilter} label="Role" onChange={e => setRoleFilter(e.target.value)}>
             <MenuItem value="">All Roles</MenuItem>
-            <MenuItem value="Super_Admin">Super Admin</MenuItem>
-            <MenuItem value="RVSK_Admin">RVSK Admin</MenuItem>
-            <MenuItem value="Ministry_Admin">Ministry Admin</MenuItem>
-            <MenuItem value="State_Admin">State Admin</MenuItem>
-            <MenuItem value="District_Admin">District Admin</MenuItem>
-            <MenuItem value="Block_Admin">Block Admin</MenuItem>
-            <MenuItem value="Viewer">Viewer</MenuItem>
+            {roleFilterOptions.map((r) => (
+              <MenuItem key={r.value} value={r.value}>{r.label}</MenuItem>
+            ))}
           </Select>
         </FormControl>
         <Button variant="outlined" onClick={handleSearch}>Search</Button>
