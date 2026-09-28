@@ -12,8 +12,11 @@ import {
   validateOptionalEmail, validateOptionalMobile,
 } from '../../utils/validators';
 import GeoScopeSelect, { GeoValue, geoLevelForRole } from './GeoScopeSelect';
+import { useRoles } from '../../hooks/useRoles';
 
-const ALL_ROLES: { value: string; label: string }[] = [
+// Static fallback used only until the dynamic role list loads (or if the roles
+// API is briefly unavailable) — keeps the form usable and never blocks.
+const FALLBACK_ROLES: { value: string; label: string }[] = [
   { value: 'Super_Admin', label: 'Super Admin' },
   { value: 'RVSK_Admin', label: 'RVSK Admin' },
   { value: 'RVSK_SPOC', label: 'RVSK SPOC' },
@@ -29,6 +32,7 @@ const EMPTY_GEO: GeoValue = { stateKey: '', districtKey: '', blockKey: '' };
 export default function AdminCreateUser() {
   const navigate = useNavigate();
   const currentUser = useSelector((state: RootState) => state.auth.user);
+  const { data: rolesData } = useRoles();
 
   const [username, setUsername] = useState('');
   const [displayName, setDisplayName] = useState('');
@@ -41,15 +45,21 @@ export default function AdminCreateUser() {
   const [contactEmail, setContactEmail] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const [credDialog, setCredDialog] = useState<{ open: boolean; username: string; password: string }>({ open: false, username: '', password: '' });
+  const [credDialog, setCredDialog] = useState<{ open: boolean; displayName: string; username: string; password: string }>({ open: false, displayName: '', username: '', password: '' });
 
   // Role-based creation authority (spec .1): RVSK_Admin cannot offer Super_Admin.
+  // Options come from the dynamic role master (active roles), falling back to the
+  // static list until it loads. Authority filtering is unchanged.
   const roleOptions = useMemo(() => {
+    const base =
+      rolesData && rolesData.length > 0
+        ? rolesData.map((r) => ({ value: r.roleCode, label: r.roleName }))
+        : FALLBACK_ROLES;
     if (currentUser?.role === 'RVSK_Admin') {
-      return ALL_ROLES.filter((r) => r.value !== 'Super_Admin');
+      return base.filter((r) => r.value !== 'Super_Admin');
     }
-    return ALL_ROLES;
-  }, [currentUser?.role]);
+    return base;
+  }, [rolesData, currentUser?.role]);
 
   const geoLevel = geoLevelForRole(role);
 
@@ -109,14 +119,14 @@ export default function AdminCreateUser() {
 
       const res = await apiClient.post('/users/create', payload);
       const data = res.data;
-      setCredDialog({ open: true, username: data.user.username, password: data.tempPassword });
+      setCredDialog({ open: true, displayName: data.user.displayName || data.user.username, username: data.user.username, password: data.tempPassword });
     } catch (err: any) {
       setError(err?.response?.data?.message || 'Failed to create user');
     } finally { setLoading(false); }
   };
 
   const handleCopy = () => {
-    navigator.clipboard.writeText(`Username: ${credDialog.username}\nPassword: ${credDialog.password}`);
+    navigator.clipboard.writeText(`${credDialog.username} / ${credDialog.password}`);
   };
 
   return (
@@ -179,22 +189,24 @@ export default function AdminCreateUser() {
         </form>
       </Paper>
 
-      {/* Credentials Dialog */}
-      <Dialog open={credDialog.open} maxWidth="sm" fullWidth>
-        <DialogTitle sx={{ bgcolor: '#F5F3FF' }}>✅ User Created Successfully</DialogTitle>
-        <DialogContent sx={{ mt: 2 }}>
-          <Typography gutterBottom>Share these credentials securely with the user:</Typography>
-          <Paper sx={{ p: 2, bgcolor: '#F8FAFC', border: '1px solid #E5E7EB', mt: 1 }}>
-            <Typography variant="body1"><b>Username:</b> <code>{credDialog.username}</code></Typography>
-            <Typography variant="body1" sx={{ mt: 1 }}><b>Temp Password:</b> <code style={{ fontSize: 18, color: '#5B21B6' }}>{credDialog.password}</code></Typography>
+      {/* Credentials Dialog — mirrors the admin Password Reset dialog (AdminUserList.tsx) */}
+      <Dialog open={credDialog.open}>
+        <DialogTitle>User Created</DialogTitle>
+        <DialogContent>
+          <Typography gutterBottom>New temporary credentials for <b>{credDialog.displayName}</b>:</Typography>
+          <Paper sx={{ p: 2, bgcolor: '#F5F3FF', mt: 1 }}>
+            <Typography variant="body2"><b>Username:</b> {credDialog.username}</Typography>
+            <Typography variant="body2"><b>Temp Password:</b> <code style={{ fontSize: 16, color: '#5B21B6' }}>{credDialog.password}</code></Typography>
           </Paper>
-          <Alert severity="info" sx={{ mt: 2 }}>
+          <Typography variant="caption" color="text.secondary" sx={{ mt: 2, display: 'block' }}>
             User must change this password on first login.
-          </Alert>
+          </Typography>
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleCopy}>Copy to Clipboard</Button>
-          <Button onClick={() => { setCredDialog({ open: false, username: '', password: '' }); resetForm(); }}>
+          <Button onClick={handleCopy}>
+            Copy to Clipboard
+          </Button>
+          <Button onClick={() => { setCredDialog({ open: false, displayName: '', username: '', password: '' }); resetForm(); }}>
             Create Another
           </Button>
           <Button variant="contained" onClick={() => navigate('/rvsk/admin/users')}>Done</Button>

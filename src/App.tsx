@@ -28,6 +28,7 @@ import PermissionManagement from './portals/rvsk/admin/PermissionManagement';
 import NotificationConfig from './portals/rvsk/admin/NotificationConfig';
 import NotificationBranding from './portals/rvsk/admin/NotificationBranding';
 import NotificationLogs from './portals/rvsk/admin/NotificationLogs';
+import StateSpocAssignment from './portals/rvsk/admin/StateSpocAssignment';
 import VskHome from './portals/vsk/VskHome';
 import VskDashboard from './portals/vsk/VskDashboard';
 import VskFormSubmissions from './portals/vsk/VskFormSubmissions';
@@ -43,8 +44,9 @@ import NishthaDashboard from './dashboards/schemes/NishthaDashboard';
 import PmPoshanDashboard from './dashboards/schemes/PmPoshanDashboard';
 import MicroImprovementDashboard from './dashboards/schemes/MicroImprovementDashboard';
 import DikshaEtbDashboard from './dashboards/schemes/DikshaEtbDashboard';
-import AttendanceLayout from './dashboards/state/attendance/AttendanceLayout';
-import AttendanceDashboard from './dashboards/state/attendance/AttendanceDashboard';
+import DashboardFilterLayout from './dashboards/shared/DashboardFilterLayout';
+import AttendanceSummary from './dashboards/state/attendance/AttendanceSummary';
+import AttendanceTrends from './dashboards/state/attendance/AttendanceTrends';
 import AccreditationDashboard from './dashboards/state/accreditation/AccreditationDashboard';
 import ProgrammeFramework from './dashboards/state/accreditation/sections/ProgrammeFramework';
 import CoverageReach from './dashboards/state/accreditation/sections/CoverageReach';
@@ -119,21 +121,28 @@ function App() {
           <Route path="/rvsk/admin/notifications" element={<NotificationConfig />} />
           <Route path="/rvsk/admin/notifications/branding" element={<NotificationBranding />} />
           <Route path="/rvsk/admin/notifications/logs" element={<NotificationLogs />} />
+          <Route path="/rvsk/admin/spoc-assignment" element={<StateSpocAssignment />} />
           <Route path="/rvsk/dashboard" element={<RvskDashboard />} />
 
-          {/* A1 - Attendance: sub-routes with shared filter bar */}
-          <Route path="/rvsk/dashboard/attendance" element={<AttendanceLayout />}>
-            <Route index element={<Navigate to="summary" replace />} />
-            <Route path="summary" element={<AttendanceDashboard page="summary" />} />
-            <Route path="detailed" element={<AttendanceDashboard page="detailed" />} />
-            <Route path="trends" element={<AttendanceDashboard page="trends" />} />
-            <Route path="report" element={<AttendanceDashboard page="report" />} />
-            <Route path="table" element={<AttendanceDashboard page="table" />} />
-            <Route path="school" element={<AttendanceDashboard page="school" />} />
-            <Route path="teacher" element={<AttendanceDashboard page="teacher" />} />
-            <Route path="student" element={<AttendanceDashboard page="student" />} />
-            <Route path="monthly" element={<AttendanceDashboard page="monthly" />} />
-            <Route path="analysis" element={<AttendanceDashboard page="analysis" />} />
+          {/* A1 - Attendance: 5-page target, shared filter bar. Page 1 (summary)
+              is the redesigned Attendance page; Pages 2-5 arrive in Phase 2. */}
+          <Route
+            path="/rvsk/dashboard/attendance"
+            element={<Navigate to="/rvsk/dashboard/attendance/summary" replace />}
+          />
+          {/* Summary → single Date leading filter. */}
+          <Route
+            path="/rvsk/dashboard/attendance/summary"
+            element={<DashboardFilterLayout leading={[{ type: 'date', label: 'Date' }]} />}
+          >
+            <Route index element={<AttendanceSummary />} />
+          </Route>
+          {/* Trends → Date Range leading filter (bounded to last 6 months). */}
+          <Route
+            path="/rvsk/dashboard/attendance/trends"
+            element={<DashboardFilterLayout leading={[{ type: 'dateRange', maxMonths: 6 }]} />}
+          >
+            <Route index element={<AttendanceTrends />} />
           </Route>
 
           {/* A2 - Assessment Dashboard */}

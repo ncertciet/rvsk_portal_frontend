@@ -42,7 +42,10 @@ interface RootState {
       displayName: string;
       role: string;
       stateCode: string | null;
-      districtCode: string | null;
+      stateName: string | null;
+      stateKey: string | null;
+      districtKey: string | null;
+      districtName: string | null;
     } | null;
   };
 }
@@ -177,7 +180,7 @@ const RaiseGrievance: React.FC = () => {
             </Grid>
             <Grid item xs={12} sm={4}>
               <Typography variant="body2" color="text.secondary">State</Typography>
-              <Typography variant="body1" fontWeight={500}>{user?.stateCode || 'N/A'}</Typography>
+              <Typography variant="body1" fontWeight={500}>{user?.stateName || user?.stateCode || 'N/A'}</Typography>
             </Grid>
           </Grid>
         </CardContent>

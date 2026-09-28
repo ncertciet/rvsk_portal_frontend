@@ -24,8 +24,9 @@ interface RootState {
       username: string;
       displayName: string;
       role: string;
-      stateCode: string | null;
-      districtCode: string | null;
+      stateKey: string | null;
+      stateName: string | null;
+      districtKey: string | null;
     } | null;
   };
 }
@@ -88,6 +89,7 @@ const GrievanceDashboard: React.FC = () => {
         label: { show: false },
         emphasis: { label: { show: true, fontSize: 14, fontWeight: 'bold' } },
         data: [
+          { value: dashboard.open || 0, name: 'Open', itemStyle: { color: GRIEVANCE_STATUSES.OPEN.color } },
           { value: dashboard.assigned || 0, name: 'Assigned', itemStyle: { color: GRIEVANCE_STATUSES.ASSIGNED.color } },
           { value: dashboard.inProgress || 0, name: 'In Progress', itemStyle: { color: GRIEVANCE_STATUSES.IN_PROGRESS.color } },
           { value: dashboard.responseProvided || 0, name: 'Response Provided', itemStyle: { color: GRIEVANCE_STATUSES.RESPONSE_PROVIDED.color } },
@@ -101,11 +103,23 @@ const GrievanceDashboard: React.FC = () => {
   // Resolution Performance Bar Chart
   const getResolutionBarOption = () => ({
     tooltip: { trigger: 'axis' },
+    grid: { left: 40, right: 20, top: 20, bottom: 60, containLabel: true },
     xAxis: {
       type: 'category',
-      data: ['Assigned', 'Under Review', 'In Progress', 'Responded', 'Closed', 'Reopened'],
+      data: ['Assigned', 'Under Review', 'In Progress', 'Response Provided', 'Closed'],
+      axisLabel: {
+        interval: 0,
+        fontSize: 11,
+        color: '#4B5563',
+      },
+      axisTick: { alignWithLabel: true },
     },
-    yAxis: { type: 'value' },
+    yAxis: {
+      type: 'value',
+      // Force whole-number ticks — counts are integers, so avoid 0.2/0.4 labels.
+      minInterval: 1,
+      axisLabel: { formatter: (value: number) => (Number.isInteger(value) ? String(value) : '') },
+    },
     series: [
       {
         type: 'bar',
@@ -115,9 +129,8 @@ const GrievanceDashboard: React.FC = () => {
           { value: dashboard.inProgress || 0, itemStyle: { color: GRIEVANCE_STATUSES.IN_PROGRESS.color } },
           { value: dashboard.responseProvided || 0, itemStyle: { color: GRIEVANCE_STATUSES.RESPONSE_PROVIDED.color } },
           { value: dashboard.closed || 0, itemStyle: { color: GRIEVANCE_STATUSES.CLOSED.color } },
-          { value: dashboard.reopened || 0, itemStyle: { color: GRIEVANCE_STATUSES.REOPENED.color } },
         ],
-        barWidth: '50%',
+        barWidth: '45%',
       },
     ],
   });

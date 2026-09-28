@@ -8,6 +8,7 @@ import SearchIcon from '@mui/icons-material/Search';
 import SaveIcon from '@mui/icons-material/Save';
 import RestartAltIcon from '@mui/icons-material/RestartAlt';
 import apiClient from '../../../services/apiClient';
+import { useRoles } from '../../../hooks/useRoles';
 
 // --- Types ---
 interface RolePageDefault {
@@ -71,7 +72,8 @@ interface EditableOverride {
   dirty: boolean;
 }
 
-const ROLES = [
+// Static fallback role list used only until the dynamic role catalog loads.
+const FALLBACK_ROLES = [
   'Super_Admin', 'RVSK_Admin', 'RVSK_SPOC', 'Ministry_Admin', 'State_Admin',
   'District_Admin', 'Block_Admin', 'Analytics_User', 'Read_Only_User', 'Viewer',
 ];
@@ -118,6 +120,13 @@ function generateFallbackRolePermissions(role: string): EditablePermission[] {
 }
 
 export default function PermissionManagement() {
+  const { data: rolesData } = useRoles();
+  // Dynamic role_code list (active roles) with a static fallback until it loads.
+  const roleCodes =
+    rolesData && rolesData.length > 0
+      ? rolesData.map((r) => r.roleCode)
+      : FALLBACK_ROLES;
+
   const [tabIndex, setTabIndex] = useState(0);
   const [selectedRole, setSelectedRole] = useState('Super_Admin');
   const [rolePermissions, setRolePermissions] = useState<EditablePermission[]>([]);
@@ -364,7 +373,7 @@ export default function PermissionManagement() {
             <FormControl size="small" sx={{ minWidth: 250, mb: 3 }}>
               <InputLabel>Select Role</InputLabel>
               <Select value={selectedRole} label="Select Role" onChange={e => handleRoleChange(e.target.value)}>
-                {ROLES.map(r => <MenuItem key={r} value={r}>{r.replace(/_/g, ' ')}</MenuItem>)}
+                {roleCodes.map(r => <MenuItem key={r} value={r}>{r.replace(/_/g, ' ')}</MenuItem>)}
               </Select>
             </FormControl>
 

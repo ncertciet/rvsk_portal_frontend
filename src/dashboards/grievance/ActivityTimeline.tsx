@@ -32,10 +32,11 @@ const ActivityTimeline: React.FC<ActivityTimelineProps> = ({ entries, showIntern
 
   const getActionLabel = (entry: TimelineEntry): string => {
     if (entry.action === 'CREATED') return 'Grievance Created';
-    if (entry.action === 'STATUS_CHANGE') return `Status changed to ${GRIEVANCE_STATUSES[entry.newStatus || '']?.label || entry.newStatus}`;
+    if (entry.action === 'STATUS_CHANGE' || entry.action === 'STATUS_CHANGED') return `Status changed to ${GRIEVANCE_STATUSES[entry.newStatus || '']?.label || entry.newStatus}`;
     if (entry.action === 'RESPONSE_ADDED') return 'Response Provided';
     if (entry.action === 'REOPENED') return 'Grievance Reopened';
     if (entry.action === 'CLOSED') return 'Grievance Closed';
+    if (entry.action === 'REASSIGNED') return 'SPOC Ownership Changed';
     if (entry.action === 'INTERNAL_NOTE') return 'Internal Note';
     return entry.action;
   };
