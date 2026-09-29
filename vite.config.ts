@@ -1,41 +1,95 @@
-import { defineConfig } from 'vite';
-import react from '@vitejs/plugin-react';
-import path from 'path';
+import { defineConfig, loadEnv } from "vite";
+import react from "@vitejs/plugin-react";
+import path from "path";
+import { fileURLToPath } from "url";
 
-export default defineConfig({
-  plugins: [react()],
-  resolve: {
-    alias: {
-      '@': path.resolve(__dirname, './src'),
+// export default defineConfig({
+//   plugins: [react()],
+//   resolve: {
+//     alias: {
+//       '@': path.resolve(__dirname, './src'),
+//     },
+//   },
+//   server: {
+//     port: 3000,
+//     proxy: {
+//       '/api/v1/schemes': {
+//         target: 'http://localhost:8082',
+//         changeOrigin: true,
+//       },
+//       '/api/v1/master': {
+//         target: 'http://localhost:8082',
+//         changeOrigin: true,
+//       },
+//       '/api/v1/reports': {
+//         target: 'http://localhost:8082',
+//         changeOrigin: true,
+//       },
+//       '/api/v1/attendance': {
+//         target: 'http://localhost:8083',
+//         changeOrigin: true,
+//       },
+//       '/api/v1/accreditation': {
+//         target: 'http://localhost:8083',
+//         changeOrigin: true,
+//       },
+//       '/api/v1': {
+//         target: 'http://localhost:8091',
+//         changeOrigin: true,
+//       },
+//     },
+//   },
+// });
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+export default defineConfig(({ mode }) => {
+  const env = loadEnv(mode, ".", "VITE_");
+
+  return {
+    plugins: [react()],
+
+    resolve: {
+      alias: {
+        "@": path.resolve(__dirname, "./src"),
+      },
     },
-  },
-  server: {
-    port: 3000,
-    proxy: {
-      '/api/v1/schemes': {
-        target: 'http://localhost:8082',
-        changeOrigin: true,
-      },
-      '/api/v1/master': {
-        target: 'http://localhost:8082',
-        changeOrigin: true,
-      },
-      '/api/v1/reports': {
-        target: 'http://localhost:8082',
-        changeOrigin: true,
-      },
-      '/api/v1/attendance': {
-        target: 'http://localhost:8083',
-        changeOrigin: true,
-      },
-      '/api/v1/accreditation': {
-        target: 'http://localhost:8083',
-        changeOrigin: true,
-      },
-      '/api/v1': {
-        target: 'http://localhost:8091',
-        changeOrigin: true,
+
+    server: {
+      port: 3000,
+
+      proxy: {
+        "/api/v1/schemes": {
+          target: env.VITE_SCHEMES_API_URL?.replace("/api/v1", ""),
+          changeOrigin: true,
+        },
+
+        "/api/v1/master": {
+          target: env.VITE_SCHEMES_API_URL?.replace("/api/v1", ""),
+          changeOrigin: true,
+        },
+
+        "/api/v1/reports": {
+          target: env.VITE_SCHEMES_API_URL?.replace("/api/v1", ""),
+          changeOrigin: true,
+        },
+
+        "/api/v1/attendance": {
+          target: env.VITE_6A_API_URL?.replace("/api/v1", ""),
+          changeOrigin: true,
+        },
+
+        "/api/v1/accreditation": {
+          target: env.VITE_6A_API_URL?.replace("/api/v1", ""),
+          changeOrigin: true,
+        },
+
+        "/api/v1": {
+          target: env.VITE_PORTAL_API_URL?.replace("/api/v1", ""),
+          changeOrigin: true,
+        },
       },
     },
-  },
+  };
 });

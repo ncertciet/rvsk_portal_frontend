@@ -1,10 +1,10 @@
-import { useEffect, useState } from 'react';
-import { Box, CircularProgress, Alert } from '@mui/material';
-import apiClient from '../../services/apiClient';
-import PmShriHeader from './pmshri/PmShriHeader';
-import PmShriBanner from './pmshri/PmShriBanner';
-import PmShriMetrics from './pmshri/PmShriMetrics';
-import PmShriMapSection from './pmshri/PmShriMapSection';
+import { useEffect, useState } from "react";
+import { Box, CircularProgress, Alert } from "@mui/material";
+import apiClient from "../../services/apiClient";
+import PmShriHeader from "./pmshri/PmShriHeader";
+import PmShriBanner from "./pmshri/PmShriBanner";
+import PmShriMetrics from "./pmshri/PmShriMetrics";
+import PmShriMapSection from "./pmshri/PmShriMapSection";
 
 interface KpiData {
   totalSchools: number;
@@ -25,23 +25,39 @@ export default function PmShriDashboard() {
 
   useEffect(() => {
     Promise.all([
-      apiClient.get('/schemes/PM_SHRI/kpis'),
-      apiClient.get('/schemes/PM_SHRI/filters'),
+      apiClient.get("/schemes/PM_SHRI/kpis"),
+      apiClient.get("/schemes/PM_SHRI/filters"),
     ])
       .then(([kpiRes, filterRes]) => {
         setKpis(kpiRes.data);
-        setStates(filterRes.data.states || []);
+        // setStates(filterRes.data.states || []);
+        const apiStates = filterRes.data?.states;
+        setStates(
+          Array.isArray(apiStates)
+            ? apiStates.filter(
+                (state): state is string =>
+                  typeof state === "string" && state.trim() !== "",
+              )
+            : [],
+        );
         setLoading(false);
       })
       .catch(() => {
-        setError('Failed to load dashboard data. Please try again later.');
+        setError("Failed to load dashboard data. Please try again later.");
         setLoading(false);
       });
   }, []);
 
   if (loading) {
     return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '60vh' }}>
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          minHeight: "60vh",
+        }}
+      >
         <CircularProgress />
       </Box>
     );
@@ -49,19 +65,19 @@ export default function PmShriDashboard() {
 
   if (error) {
     return (
-      <Box sx={{ p: 4, maxWidth: 1300, mx: 'auto' }}>
+      <Box sx={{ p: 4, maxWidth: 1300, mx: "auto" }}>
         <Alert severity="error">{error}</Alert>
       </Box>
     );
   }
 
   return (
-    <Box sx={{ bgcolor: '#F9FAFB', minHeight: '100vh' }}>
+    <Box sx={{ bgcolor: "#F9FAFB", minHeight: "100vh" }}>
       {/* Header Bar */}
       <PmShriHeader />
 
       {/* Main Content */}
-      <Box sx={{ maxWidth: 1300, mx: 'auto', px: 3, py: 3 }}>
+      <Box sx={{ maxWidth: 1300, mx: "auto", px: 3, py: 3 }}>
         {/* Hero Banner */}
         <PmShriBanner />
 
