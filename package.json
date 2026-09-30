@@ -4,7 +4,7 @@
   "version": "2.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite --mode local",
+    "dev": "vite",
     "dev:dev": "vite --mode dev",
     "dev:uat": "vite --mode uat",
     "dev:prod": "vite --mode production",
