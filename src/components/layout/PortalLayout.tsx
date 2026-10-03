@@ -22,6 +22,7 @@ import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import ExpandLess from '@mui/icons-material/ExpandLess';
 import ExpandMore from '@mui/icons-material/ExpandMore';
 import FolderIcon from '@mui/icons-material/Folder';
+import EventIcon from '@mui/icons-material/Event';
 import { useDispatch, useSelector } from 'react-redux';
 import { logout } from '../../store/authSlice';
 import { RootState } from '../../store';
@@ -54,6 +55,7 @@ const ICON_MAP: Record<string, React.ReactNode> = {
   Verified: <VerifiedIcon />, Apartment: <ApartmentIcon />,
   DynamicForm: <DynamicFormIcon />, Description: <DescriptionIcon />,
   AdminPanelSettings: <AdminPanelSettingsIcon />, Person: <PersonIcon />,
+  Event: <EventIcon />,
 };
 
 function getIcon(iconName: string | null, small?: boolean): React.ReactNode {

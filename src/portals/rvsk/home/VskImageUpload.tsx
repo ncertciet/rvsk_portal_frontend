@@ -6,8 +6,11 @@ import {
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import DeleteIcon from '@mui/icons-material/Delete';
 import ImageIcon from '@mui/icons-material/Image';
+import StarIcon from '@mui/icons-material/Star';
+import StarBorderIcon from '@mui/icons-material/StarBorder';
+import Chip from '@mui/material/Chip';
 import { GalleryImage } from './types';
-import { fetchGalleryImages, uploadGalleryImage, deleteGalleryImage } from './homeApi';
+import { fetchGalleryImages, uploadGalleryImage, deleteGalleryImage, setGalleryProfileImage } from './homeApi';
 import { getApiErrorMessage } from '../../../services/apiError';
 
 export default function VskImageUpload() {
@@ -80,6 +83,17 @@ export default function VskImageUpload() {
       setImages((prev) => prev.filter((img) => img.id !== id));
     } catch {
       setSnackbar({ open: true, message: 'Failed to delete image', severity: 'error' });
+    }
+  };
+
+  const handleSetProfile = async (id: string) => {
+    try {
+      await setGalleryProfileImage(id);
+      // Exactly one profile image per state: flip locally.
+      setImages((prev) => prev.map((img) => ({ ...img, isProfileImage: img.id === id })));
+      setSnackbar({ open: true, message: 'Profile image updated. It will show in the State Profile slider on the portal.', severity: 'success' });
+    } catch (err) {
+      setSnackbar({ open: true, message: getApiErrorMessage(err, 'Failed to set profile image'), severity: 'error' });
     }
   };
 
@@ -182,7 +196,31 @@ export default function VskImageUpload() {
         <Grid container spacing={2}>
           {images.map((img) => (
             <Grid item xs={6} sm={4} md={3} key={img.id}>
-              <Card sx={{ borderRadius: 2, border: '1px solid #F1F5F9', position: 'relative' }}>
+              <Card
+                sx={{
+                  borderRadius: 2,
+                  position: 'relative',
+                  border: img.isProfileImage ? '2px solid #7C3AED' : '1px solid #F1F5F9',
+                }}
+              >
+                {img.isProfileImage && (
+                  <Chip
+                    icon={<StarIcon sx={{ fontSize: 14 }} />}
+                    label="Profile"
+                    size="small"
+                    color="secondary"
+                    sx={{
+                      position: 'absolute',
+                      top: 6,
+                      left: 6,
+                      zIndex: 1,
+                      bgcolor: '#7C3AED',
+                      color: '#fff',
+                      fontSize: '0.65rem',
+                      height: 20,
+                    }}
+                  />
+                )}
                 <Box sx={{ p: 1.5, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
                   <Avatar
                     src={img.thumbnailUrl || img.imageUrl}
@@ -193,15 +231,29 @@ export default function VskImageUpload() {
                   <Typography variant="caption" color="text.secondary" sx={{ textAlign: 'center' }} noWrap>
                     {img.caption || img.stateName}
                   </Typography>
-                  <Tooltip title="Delete image">
-                    <IconButton
-                      size="small"
-                      onClick={() => handleDelete(img.id)}
-                      sx={{ color: '#EF4444', '&:hover': { bgcolor: '#FEF2F2' } }}
-                    >
-                      <DeleteIcon fontSize="small" />
-                    </IconButton>
-                  </Tooltip>
+                  <Box sx={{ display: 'flex', gap: 0.5 }}>
+                    <Tooltip title={img.isProfileImage ? 'This is your profile image' : 'Set as Profile Image'}>
+                      <span>
+                        <IconButton
+                          size="small"
+                          onClick={() => handleSetProfile(img.id)}
+                          disabled={img.isProfileImage}
+                          sx={{ color: img.isProfileImage ? '#7C3AED' : '#94A3B8', '&:hover': { bgcolor: '#F5F3FF' } }}
+                        >
+                          {img.isProfileImage ? <StarIcon fontSize="small" /> : <StarBorderIcon fontSize="small" />}
+                        </IconButton>
+                      </span>
+                    </Tooltip>
+                    <Tooltip title="Delete image">
+                      <IconButton
+                        size="small"
+                        onClick={() => handleDelete(img.id)}
+                        sx={{ color: '#EF4444', '&:hover': { bgcolor: '#FEF2F2' } }}
+                      >
+                        <DeleteIcon fontSize="small" />
+                      </IconButton>
+                    </Tooltip>
+                  </Box>
                 </Box>
               </Card>
             </Grid>

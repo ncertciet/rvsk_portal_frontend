@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useSelector } from 'react-redux';
 import {
   Box, Typography, Tabs, Tab, Stepper, Step, StepLabel, StepButton,
-  Button, Paper, Chip, Alert, Snackbar, Fade, CircularProgress,
+  Button, Paper, Chip, Alert, Snackbar, CircularProgress,
 } from '@mui/material';
 import PersonIcon from '@mui/icons-material/Person';
 import BuildIcon from '@mui/icons-material/Build';
@@ -12,8 +12,8 @@ import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import CollectionsIcon from '@mui/icons-material/Collections';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
-import SaveIcon from '@mui/icons-material/Save';
 import LockIcon from '@mui/icons-material/Lock';
+import EditIcon from '@mui/icons-material/Edit';
 
 import Step1OfficersCommittee from './vsk/steps/Step1OfficersCommittee';
 import Step2InfraHardware from './vsk/steps/Step2InfraHardware';
@@ -21,7 +21,7 @@ import Step3Software from './vsk/steps/Step3Software';
 import Step4Pmu from './vsk/steps/Step4Pmu';
 import Step5ReviewSubmit from './vsk/steps/Step5ReviewSubmit';
 import VskImageUpload from './home/VskImageUpload';
-import { fetchVskProfile, saveDraft, saveAndNext, VskProfileDto } from './vsk/vskApi';
+import { fetchVskProfile, reopenProfile, VskProfileDto } from './vsk/vskApi';
 import { RootState } from '../../store';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -99,7 +99,7 @@ export default function VskDetails() {
 
   // Navigation
   const [activeTab, setActiveTab] = useState(0); // 0-4 = steps, 5 = gallery
-  const [autoSaving, setAutoSaving] = useState(false);
+  const [reopening, setReopening] = useState(false);
   const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'info' | 'error' }>({
     open: false, message: '', severity: 'info',
   });
@@ -176,18 +176,21 @@ export default function VskDetails() {
     }
   };
 
-  const handleSaveDraft = async () => {
-    if (activeStepIndex < 0) return;
-    setAutoSaving(true);
+  /**
+   * Re-open a submitted profile for editing. Flips the backend status back to
+   * DRAFT (data + officer history preserved), reloads, and lands on Step 1.
+   */
+  const handleReopen = async () => {
+    setReopening(true);
     try {
-      await saveDraft({ step: activeStepIndex + 1, data: {} });
-      // Refresh profile to update statuses
+      await reopenProfile();
       await loadProfile();
-      setSnackbar({ open: true, message: 'Draft saved successfully', severity: 'success' });
+      setActiveTab(0);
+      setSnackbar({ open: true, message: 'Profile re-opened for editing. Remember to submit again when done.', severity: 'success' });
     } catch {
-      setSnackbar({ open: true, message: 'Failed to save draft', severity: 'error' });
+      setSnackbar({ open: true, message: 'Failed to re-open profile. Please try again.', severity: 'error' });
     } finally {
-      setAutoSaving(false);
+      setReopening(false);
     }
   };
 
@@ -205,22 +208,6 @@ export default function VskDetails() {
       setSnackbar({ open: true, message: 'Step saved. Moving to next step.', severity: 'success' });
     }
   }, [activeTab, loadProfile]);
-
-  /**
-   * Footer "Save & Next" button handler.
-   * Calls the saveAndNext API to mark current step as COMPLETE, then advances.
-   */
-  const handleFooterSaveAndNext = useCallback(async () => {
-    if (activeStepIndex < 0 || activeStepIndex >= 4) return;
-    try {
-      await saveAndNext({ step: activeStepIndex + 1, data: {} });
-      await loadProfile();
-      setActiveTab(activeStepIndex + 1);
-      setSnackbar({ open: true, message: 'Step saved. Moving to next step.', severity: 'success' });
-    } catch {
-      setSnackbar({ open: true, message: 'Failed to save step', severity: 'error' });
-    }
-  }, [activeStepIndex, loadProfile]);
 
   /**
    * Called after successful submission from Step5ReviewSubmit.
@@ -300,13 +287,6 @@ export default function VskDetails() {
           VSK Details Wizard
         </Typography>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-          {autoSaving && (
-            <Fade in={autoSaving}>
-              <Typography variant="caption" color="text.secondary" sx={{ fontStyle: 'italic' }}>
-                Saving...
-              </Typography>
-            </Fade>
-          )}
           {isSubmitted && (
             <Chip
               label="SUBMITTED"
@@ -318,14 +298,78 @@ export default function VskDetails() {
         </Box>
       </Box>
 
-      {/* Submitted Banner */}
+      {/* Submitted Banner — with an option to re-open for editing. */}
       {isSubmitted && (
-        <Alert severity="success" sx={{ mb: 3, borderRadius: 2 }} icon={<LockIcon />}>
+        <Alert
+          severity="success"
+          sx={{ mb: 3, borderRadius: 2 }}
+          icon={<LockIcon />}
+          action={
+            <Button
+              color="inherit"
+              size="small"
+              startIcon={reopening ? <CircularProgress size={14} color="inherit" /> : <EditIcon />}
+              disabled={reopening}
+              onClick={handleReopen}
+              sx={{ textTransform: 'none', fontWeight: 600 }}
+            >
+              {reopening ? 'Re-opening...' : 'Edit VSK Profile'}
+            </Button>
+          }
+        >
           <Typography variant="body2" fontWeight={500}>
-            This VSK Details form was submitted successfully and is now locked. All steps are read-only.
+            This VSK Details form was submitted and is now locked (read-only). Choose
+            "Edit VSK Profile" to re-open it for changes; you will need to submit again
+            afterwards.
           </Typography>
         </Alert>
       )}
+
+      {/* Profile Completion Status — prominent indicator of what remains.
+          Shown only before submission, and only once the profile has loaded. */}
+      {!isSubmitted && !loading && !isGalleryTab && (() => {
+        const stepStepStatuses = stepStatuses.slice(0, 4); // steps 1-4 drive completion
+        const completedCount = stepStepStatuses.filter(s => s === 'COMPLETE').length;
+        const pendingLabels = STEP_CONFIGS.slice(0, 4)
+          .map((cfg, idx) => ({ cfg, status: stepStepStatuses[idx] }))
+          .filter(x => x.status !== 'COMPLETE')
+          .map(x => x.cfg.label);
+        const allComplete = completedCount === 4;
+
+        return (
+          <Alert
+            severity={allComplete ? 'success' : 'warning'}
+            sx={{ mb: 3, borderRadius: 2 }}
+          >
+            <Typography variant="body2" fontWeight={600} sx={{ mb: pendingLabels.length ? 0.5 : 0 }}>
+              {allComplete
+                ? 'All steps complete — go to Step 5: Review to submit your VSK Profile.'
+                : `VSK Profile Incomplete — ${completedCount} of 4 steps complete. Please complete the pending steps to submit your VSK Profile.`}
+            </Typography>
+            {!allComplete && (
+              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.75, mt: 1 }}>
+                {STEP_CONFIGS.slice(0, 4).map((cfg, idx) => {
+                  const status = stepStepStatuses[idx];
+                  const label =
+                    status === 'COMPLETE' ? 'Completed'
+                    : status === 'DRAFT' ? 'In Progress'
+                    : 'Pending';
+                  return (
+                    <Chip
+                      key={cfg.label}
+                      size="small"
+                      label={`${cfg.label}: ${label}`}
+                      color={STATUS_COLORS[status]}
+                      variant={status === 'COMPLETE' ? 'filled' : 'outlined'}
+                      sx={{ fontSize: '0.7rem' }}
+                    />
+                  );
+                })}
+              </Box>
+            )}
+          </Alert>
+        );
+      })()}
 
       {/* Tabs: Steps 1-5 + Gallery */}
       <Paper sx={{ borderRadius: 2, mb: 3, overflow: 'hidden' }}>
@@ -430,7 +474,12 @@ export default function VskDetails() {
         {renderStepContent()}
       </Paper>
 
-      {/* Footer Navigation (only for step tabs, not gallery, not if submitted) */}
+      {/* Footer Navigation (only for step tabs, not gallery, not if submitted).
+          There is a single, consistent set of actions: the step's own
+          "Save & Next" button (which always runs that step's validation) is the
+          one way to save and advance. The footer provides only Back navigation
+          so the previous duplicate — an unvalidated footer "Save & Next" — is
+          gone. */}
       {!isGalleryTab && !isSubmitted && (
         <Paper sx={{ p: 2, borderRadius: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <Button
@@ -442,27 +491,12 @@ export default function VskDetails() {
           >
             Back
           </Button>
-          <Box sx={{ display: 'flex', gap: 2 }}>
-            <Button
-              variant="outlined"
-              startIcon={<SaveIcon />}
-              onClick={handleSaveDraft}
-              disabled={autoSaving}
-              sx={{ textTransform: 'none' }}
-            >
-              Save Draft
-            </Button>
-            {activeTab < 4 && (
-              <Button
-                variant="contained"
-                endIcon={<ArrowForwardIcon />}
-                onClick={handleFooterSaveAndNext}
-                sx={{ textTransform: 'none', bgcolor: '#7C3AED', '&:hover': { bgcolor: '#6D28D9' } }}
-              >
-                Save & Next
-              </Button>
-            )}
-          </Box>
+          <Typography variant="caption" color="text.secondary" sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+            {activeTab < 4
+              ? 'Use "Save & Next" within the step to validate and continue.'
+              : 'Review all steps below, then Submit to complete your VSK Profile.'}
+            <ArrowForwardIcon sx={{ fontSize: 16 }} />
+          </Typography>
         </Paper>
       )}
 

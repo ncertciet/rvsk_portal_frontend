@@ -381,6 +381,11 @@ export async function submitProfile(): Promise<void> {
   await apiClient.post('/vsk/submit');
 }
 
+/** Re-open a submitted profile for editing (flips status back to DRAFT). */
+export async function reopenProfile(): Promise<void> {
+  await apiClient.post('/vsk/reopen');
+}
+
 // ═══════════════════════════════════════════════════════════════════════════════
 // API Functions — Admin (unchanged endpoints, updated response shapes)
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -422,6 +427,12 @@ export async function fetchAdminStates(
 export async function fetchStateFullDetails(stateCode: string): Promise<StateFullDetailsDto> {
   const res = await apiClient.get<StateFullDetailsDto>(`/vsk/admin/states/${stateCode}`);
   return res.data;
+}
+
+/** Download a state's VSK Profile PDF (admin). Returns the PDF blob. */
+export async function downloadStatePdf(stateCode: string): Promise<Blob> {
+  const res = await apiClient.get(`/vsk/admin/states/${stateCode}/pdf`, { responseType: 'blob' });
+  return res.data as Blob;
 }
 
 export async function exportVskData(
