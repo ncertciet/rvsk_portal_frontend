@@ -1,10 +1,10 @@
+import { useEffect } from 'react';
 import { Box, Typography, Paper, Grid } from '@mui/material';
 import SchoolIcon from '@mui/icons-material/School';
 import ReactECharts from 'echarts-for-react';
 import { useQuery } from '@tanstack/react-query';
 import { ATT_COLORS, formatIndian } from './attendanceColors';
-import { mockAttendancePage, AttendancePageData } from './attendanceMockData';
-import { attendanceApi } from './attendanceApi';
+import { attendanceApi, StudentBreakdownBar, AttendancePageData } from './attendanceApi';
 import { useDashboardFilters } from '../../shared/DashboardFilterLayout';
 import AttendanceGeoSection from './AttendanceGeoSection';
 
@@ -12,7 +12,9 @@ import AttendanceGeoSection from './AttendanceGeoSection';
  * Page 1 — Attendance (design.md §7), laid out to match the approved reference:
  *   LEFT  column: Integration Coverage (3 gauges) + Integration Status (pill grid)
  *   RIGHT column: Schools Integration (concentric rings with school icon + legend)
- * Compact, full-width, single-screen. Mock-first.
+ * Compact, full-width, single-screen. Live data only — no local fallback;
+ * when the API returns no data (meta.empty / not yet populated) the page shows
+ * an explicit empty state instead of placeholder numbers.
  */
 
 // Purple gradient section header bar (matches the reference).
@@ -152,6 +154,44 @@ function InfoRow({ label, value, bg }: { label: string; value: string; bg: strin
   );
 }
 
+// Placeholder when a breakdown has no reported data for the date/scope.
+function EmptyChart() {
+  return (
+    <Box sx={{ height: 220, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#9CA3AF', fontSize: '0.8rem' }}>
+      No student attendance reported for this selection.
+    </Box>
+  );
+}
+
+// Student breakdown bar chart: present % per label (class/gender/category).
+// Each bar is attendance % (present / (present+absent)); tooltip shows counts.
+function studentBreakdownOption(bars: StudentBreakdownBar[], color: string) {
+  const cats = bars.map((b) => b.label);
+  const vals = bars.map((b) => b.pct);
+  return {
+    tooltip: {
+      trigger: 'axis',
+      axisPointer: { type: 'shadow' },
+      formatter: (p: any[]) => {
+        const b = bars[p[0].dataIndex];
+        return `${b.label}<br/>Present: ${b.present}<br/>Absent: ${b.absent}<br/>Attendance: ${b.pct}%`;
+      },
+    },
+    grid: { left: 56, right: 20, top: 16, bottom: 36 },
+    xAxis: { type: 'category', data: cats, axisLabel: { rotate: cats.length > 6 ? 40 : 0, fontSize: 10, interval: 0, color: '#6B7280' } },
+    yAxis: { type: 'value', min: 0, max: 100, axisLabel: { formatter: '{value}%', color: '#6B7280' }, splitLine: { lineStyle: { color: '#EEF1F6' } } },
+    series: [
+      {
+        type: 'bar',
+        data: vals,
+        itemStyle: { color, borderRadius: [3, 3, 0, 0] },
+        barMaxWidth: 34,
+        label: { show: true, position: 'top', formatter: '{c}%', fontSize: 9, color: '#374151' },
+      },
+    ],
+  };
+}
+
 // Small coloured value chip (Present / Absent / Outside the School).
 function ValueChip({ label, value, color }: { label: string; value: string; color: string }) {
   return (
@@ -195,10 +235,42 @@ export default function AttendanceSummary() {
     staleTime: 5 * 60 * 1000, // align with the 5–10 min KPI TTL
   });
 
-  // Use live data when present; fall back to the mock while loading or when the
-  // API returns meta.empty (keys not yet populated by the cron).
-  const d: AttendancePageData = envelope?.data ?? mockAttendancePage;
-  const isMock = !envelope?.data;
+  // Student breakdown (class / gender / category) for the selected date + node.
+  const { data: breakdownEnvelope } = useQuery({
+    queryKey: ['attendance', 'student-breakdown', params],
+    queryFn: () => attendanceApi.getStudentBreakdown(params),
+    staleTime: 5 * 60 * 1000,
+  });
+  const breakdown = breakdownEnvelope?.data ?? null;
+
+  // Live data only. On a miss (loading or meta.empty) `d` is null and the page
+  // renders an explicit empty state — no locally stored mock numbers.
+  const d: AttendancePageData | null = envelope?.data ?? null;
+
+  // B2: the date field starts empty so the backend resolves the latest date WITH
+  // data; once the response arrives, backfill the top-row picker with that date
+  // (meta.asOfDate) so the user sees/controls the real snapshot date.
+  const resolvedDate = envelope?.meta?.asOfDate ?? envelope?.data?.asOfDate;
+  useEffect(() => {
+    if (!f.selectedDate && resolvedDate) f.setLeading('date', resolvedDate);
+  }, [f, resolvedDate]);
+
+  // No live data yet (loading, or the ADW cache has not been populated for this
+  // date/scope). Show an explicit message rather than placeholder data.
+  if (!d) {
+    return (
+      <Box sx={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', p: 4 }}>
+        <Typography sx={{ color: '#6B7280', fontSize: '0.9rem', textAlign: 'center' }}>
+          No attendance data available for this selection.
+          <br />
+          <Typography component="span" sx={{ color: '#9CA3AF', fontSize: '0.78rem' }}>
+            Data loads once the ADW cache is populated for the selected date and scope.
+          </Typography>
+        </Typography>
+      </Box>
+    );
+  }
+
   const si = d.schoolIntegration;
   const udiseRef = d.integrationStatus.udiseRef;
 
@@ -225,11 +297,6 @@ export default function AttendanceSummary() {
         <Typography sx={{ fontWeight: 700, color: '#374151', fontSize: '0.8rem' }}>
           View Level: {d.scopeLevel === 'national' ? 'National Level' : d.scopeLevel === 'state' ? 'State Level' : 'District Level'}
         </Typography>
-        {isMock && (
-          <Typography sx={{ color: '#9CA3AF', fontSize: '0.62rem', ml: 'auto' }}>
-            Mock preview — live data loads once the ADW cache is populated.
-          </Typography>
-        )}
       </Box>
 
       <Grid container spacing={1.25}>
@@ -351,6 +418,48 @@ export default function AttendanceSummary() {
           </Paper>
         </Grid>
       </Grid>
+
+      {/* ── Row 2b: Student attendance by Class / Gender / Category ──── */}
+      {breakdown && (
+        <Grid container spacing={1.25}>
+          <Grid item xs={12} md={4}>
+            <Paper sx={{ overflow: 'hidden' }}>
+              <SectionBar title="Students Attendance by Class" />
+              <Box sx={{ p: 1 }}>
+                {breakdown.byClass.length ? (
+                  <ReactECharts option={studentBreakdownOption(breakdown.byClass, ATT_COLORS.student)} style={{ height: 220 }} notMerge />
+                ) : (
+                  <EmptyChart />
+                )}
+              </Box>
+            </Paper>
+          </Grid>
+          <Grid item xs={12} md={4}>
+            <Paper sx={{ overflow: 'hidden' }}>
+              <SectionBar title="Students Attendance by Gender" />
+              <Box sx={{ p: 1 }}>
+                {breakdown.byGender.some((b) => b.present + b.absent > 0) ? (
+                  <ReactECharts option={studentBreakdownOption(breakdown.byGender, ATT_COLORS.chrome)} style={{ height: 220 }} notMerge />
+                ) : (
+                  <EmptyChart />
+                )}
+              </Box>
+            </Paper>
+          </Grid>
+          <Grid item xs={12} md={4}>
+            <Paper sx={{ overflow: 'hidden' }}>
+              <SectionBar title="Students Attendance by Category" />
+              <Box sx={{ p: 1 }}>
+                {breakdown.byCategory.some((b) => b.present + b.absent > 0) ? (
+                  <ReactECharts option={studentBreakdownOption(breakdown.byCategory, ATT_COLORS.teacher)} style={{ height: 220 }} notMerge />
+                ) : (
+                  <EmptyChart />
+                )}
+              </Box>
+            </Paper>
+          </Grid>
+        </Grid>
+      )}
 
       {/* ── Row 3: Attendance by Geography | State/UT-wise bars ──────── */}
       <AttendanceGeoSection />

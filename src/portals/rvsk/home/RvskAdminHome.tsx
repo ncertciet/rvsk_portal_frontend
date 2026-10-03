@@ -10,7 +10,7 @@ import DynamicFormIcon from '@mui/icons-material/DynamicForm';
 import ImageIcon from '@mui/icons-material/Image';
 import { Alert } from '@mui/material';
 import { RvskAdminHomeData, GalleryImage } from './types';
-import { fetchRvskAdminHome, fetchGalleryImages } from './homeApi';
+import { fetchRvskAdminHome, fetchProfileImages } from './homeApi';
 import { getApiErrorMessage } from '../../../services/apiError';
 import GalleryCarousel from './GalleryCarousel';
 
@@ -45,9 +45,10 @@ export default function RvskAdminHome() {
       } finally {
         if (!cancelled) setLoading(false);
       }
-      // Gallery is non-critical — degrade to empty on failure without blocking.
+      // Gallery slider shows each state's selected profile image (one per
+      // state). Non-critical — degrade to empty on failure without blocking.
       try {
-        const images = await fetchGalleryImages();
+        const images = await fetchProfileImages();
         if (!cancelled) setGallery(images);
       } catch {
         if (!cancelled) setGallery([]);

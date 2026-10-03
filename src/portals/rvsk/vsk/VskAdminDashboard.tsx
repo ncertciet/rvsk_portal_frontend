@@ -4,17 +4,19 @@ import {
   Table, TableHead, TableRow, TableCell, TableBody, TableContainer,
   Paper, TablePagination, CircularProgress, Dialog, DialogTitle,
   DialogContent, DialogActions, Tabs, Tab, Chip, InputAdornment,
-  Snackbar, Alert, LinearProgress,
+  Snackbar, Alert, LinearProgress, IconButton, Tooltip,
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import DownloadIcon from '@mui/icons-material/Download';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import CancelIcon from '@mui/icons-material/Cancel';
 import VisibilityIcon from '@mui/icons-material/Visibility';
+import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
 import {
   DashboardKpiDto, StateVskSummaryDto, StateFullDetailsDto,
   OfficerHistoryDto,
   fetchAdminDashboard, fetchAdminStates, fetchStateFullDetails, exportVskData,
+  downloadStatePdf,
 } from './vskApi';
 
 interface KpiCardProps { title: string; value: number | string; color: string; }
@@ -213,6 +215,7 @@ export default function VskAdminDashboard() {
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
   const [exporting, setExporting] = useState(false);
+  const [downloadingState, setDownloadingState] = useState<string | null>(null);
   const [selectedState, setSelectedState] = useState<string | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' }>({
@@ -264,6 +267,25 @@ export default function VskAdminDashboard() {
   const handleViewState = (stateCode: string) => {
     setSelectedState(stateCode);
     setDialogOpen(true);
+  };
+
+  const handleDownloadPdf = async (stateCode: string, stateName: string) => {
+    setDownloadingState(stateCode);
+    try {
+      const blob = await downloadStatePdf(stateCode);
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `VSK_Profile_${(stateName || stateCode).replace(/[^a-zA-Z0-9_-]+/g, '_')}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+    } catch {
+      setSnackbar({ open: true, message: 'Failed to download VSK Profile PDF', severity: 'error' });
+    } finally {
+      setDownloadingState(null);
+    }
   };
 
   return (
@@ -346,10 +368,28 @@ export default function VskAdminDashboard() {
                       variant="outlined" />
                   </TableCell>
                   <TableCell align="center">
-                    <Button size="small" variant="text" startIcon={<VisibilityIcon />}
-                      onClick={() => handleViewState(row.stateCode)}>
-                      View
-                    </Button>
+                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0.5 }}>
+                      <Button size="small" variant="text" startIcon={<VisibilityIcon />}
+                        onClick={() => handleViewState(row.stateCode)}>
+                        View
+                      </Button>
+                      {row.submissionStatus === 'SUBMITTED' && (
+                        <Tooltip title="Download VSK Profile PDF">
+                          <span>
+                            <IconButton
+                              size="small"
+                              color="primary"
+                              disabled={downloadingState === row.stateCode}
+                              onClick={() => handleDownloadPdf(row.stateCode, row.stateName)}
+                            >
+                              {downloadingState === row.stateCode
+                                ? <CircularProgress size={18} />
+                                : <PictureAsPdfIcon fontSize="small" />}
+                            </IconButton>
+                          </span>
+                        </Tooltip>
+                      )}
+                    </Box>
                   </TableCell>
                 </TableRow>
               ))

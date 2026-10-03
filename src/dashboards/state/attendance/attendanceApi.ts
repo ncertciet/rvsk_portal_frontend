@@ -107,7 +107,49 @@ export const attendanceApi = {
     apiClient
       .get<SuccessEnvelope<TrendData | null>>('/attendance/trend', { params })
       .then((res) => res.data),
+
+  // ── Page 1 — Geography (map + State/UT teacher bar), drill-aware ────────────
+  getGeo: (params: AttendancePageParams): Promise<GeoEnvelope> =>
+    apiClient
+      .get<SuccessEnvelope<GeoData | null>>('/attendance/geo', { params })
+      .then((res) => res.data),
+
+  // ── Page 1 — Student breakdown bars (class / gender / category) ─────────────
+  getStudentBreakdown: (params: AttendancePageParams): Promise<StudentBreakdownEnvelope> =>
+    apiClient
+      .get<SuccessEnvelope<StudentBreakdownData | null>>('/attendance/student-breakdown', { params })
+      .then((res) => res.data),
 };
+
+// ── Page 1 Student breakdown types ──────────────────────────────────────────────
+export interface StudentBreakdownBar {
+  label: string;
+  present: number;
+  absent: number;
+  pct: number;
+}
+export interface StudentBreakdownData {
+  byClass: StudentBreakdownBar[];
+  byGender: StudentBreakdownBar[];
+  byCategory: StudentBreakdownBar[];
+}
+export type StudentBreakdownEnvelope = SuccessEnvelope<StudentBreakdownData | null>;
+
+// ── Page 1 Geography types (mirror backend interfaces/dashboard.ts) ─────────────
+export interface GeoRegion {
+  level: 'state' | 'district' | 'block' | 'cluster' | 'school';
+  key: string;
+  name: string;
+  studentAttendancePct: number;
+  teacherReportedPct: number;
+  lat: number | null;
+  lng: number | null;
+}
+export interface GeoData {
+  childLevel: 'state' | 'district' | 'block' | 'cluster' | 'school';
+  regions: GeoRegion[];
+}
+export type GeoEnvelope = SuccessEnvelope<GeoData | null>;
 
 // ── Page 1 request + response types (mirror backend interfaces/dashboard.ts) ────
 export interface AttendancePageParams {

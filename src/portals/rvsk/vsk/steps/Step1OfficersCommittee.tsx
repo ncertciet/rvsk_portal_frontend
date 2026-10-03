@@ -5,7 +5,7 @@ import {
   TableContainer, TableHead, TableRow, Paper, IconButton,
   Divider, Tooltip, Dialog, DialogTitle, DialogContent,
   DialogActions, CircularProgress, Snackbar, Alert,
-  RadioGroup, Radio, FormControl, FormLabel,
+  RadioGroup, Radio, FormControl, FormLabel, Chip, Collapse,
 } from '@mui/material';
 import HistoryIcon from '@mui/icons-material/History';
 import AddIcon from '@mui/icons-material/Add';
@@ -25,6 +25,10 @@ import {
   updateCommitteeMember,
   removeCommitteeMember,
   saveAndNext,
+  fetchVskProfile,
+  createProfile,
+  updateProfile,
+  VskProfileDto,
 } from '../vskApi';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -195,6 +199,13 @@ export default function Step1OfficersCommittee({
   });
   const [loading, setLoading] = useState(true);
 
+  // ─── State: VSK Address & Facilitation (vsk_profile fields) ────────────────
+  const [profileForm, setProfileForm] = useState({
+    addressLine1: '', addressLine2: '', city: '', pincode: '', facilitatedBy: '', otherSchemeName: '',
+  });
+  const [profileExists, setProfileExists] = useState(false);
+  const [profileErrors, setProfileErrors] = useState<Record<string, string>>({});
+
   // ─── State: "Same as Secretary" checkboxes (REMOVED - not needed) ─────────
 
   // ─── State: Edit Mode Dialog ──────────────────────────────────────────────
@@ -205,11 +216,17 @@ export default function Step1OfficersCommittee({
   const [appointStartDate, setAppointStartDate] = useState('');
   const [editSaving, setEditSaving] = useState(false);
 
-  // ─── State: Officer History Dialog ────────────────────────────────────────
-  const [historyOpen, setHistoryOpen] = useState(false);
-  const [historyRole, setHistoryRole] = useState<OfficerRole>('SECRETARY');
-  const [historyData, setHistoryData] = useState<OfficerHistoryDto[]>([]);
-  const [historyLoading, setHistoryLoading] = useState(false);
+  // ─── State: Inline (on-page) officer history ──────────────────────────────
+  // Keeps "current vs historical" visible on the page itself (no pop-up needed).
+  const [inlineHistory, setInlineHistory] = useState<Record<OfficerRole, OfficerHistoryDto[]>>({
+    SECRETARY: [], SPD: [], NODAL_OFFICER: [],
+  });
+  const [expandedHistory, setExpandedHistory] = useState<Record<OfficerRole, boolean>>({
+    SECRETARY: false, SPD: false, NODAL_OFFICER: false,
+  });
+  const [inlineHistoryLoading, setInlineHistoryLoading] = useState<Record<OfficerRole, boolean>>({
+    SECRETARY: false, SPD: false, NODAL_OFFICER: false,
+  });
 
   // ─── State: Officer Form Validation Errors ──────────────────────────────────
   const [officerFormErrors, setOfficerFormErrors] = useState<OfficerFormErrors>({});
@@ -232,6 +249,41 @@ export default function Step1OfficersCommittee({
 
   const showSnackbar = (message: string, severity: SnackbarState['severity'] = 'success') => {
     setSnackbar({ open: true, message, severity });
+  };
+
+  const updateProfileField = (field: keyof typeof profileForm, value: string) => {
+    setProfileForm(prev => ({ ...prev, [field]: value }));
+    setProfileErrors(prev => { const n = { ...prev }; delete n[field]; return n; });
+  };
+
+  /** Validate the required VSK address/facilitation fields. */
+  const validateProfile = (): boolean => {
+    const errs: Record<string, string> = {};
+    if (!profileForm.addressLine1.trim()) errs.addressLine1 = 'Address Line 1 is required';
+    if (!profileForm.city.trim()) errs.city = 'City is required';
+    if (!profileForm.pincode.trim()) errs.pincode = 'Pincode is required';
+    else if (!/^\d{6}$/.test(profileForm.pincode.trim())) errs.pincode = 'Pincode must be 6 digits';
+    if (!profileForm.facilitatedBy.trim()) errs.facilitatedBy = 'Facilitated By is required';
+    setProfileErrors(errs);
+    return Object.keys(errs).length === 0;
+  };
+
+  /** Persist the VSK address/facilitation fields to the vsk_profile row. */
+  const saveProfileFields = async (): Promise<void> => {
+    const dto: VskProfileDto = {
+      addressLine1: profileForm.addressLine1.trim(),
+      addressLine2: profileForm.addressLine2.trim() || undefined,
+      city: profileForm.city.trim(),
+      pincode: profileForm.pincode.trim(),
+      facilitatedBy: profileForm.facilitatedBy.trim(),
+      otherSchemeName: profileForm.otherSchemeName.trim() || undefined,
+    };
+    if (profileExists) {
+      await updateProfile(dto);
+    } else {
+      await createProfile(dto);
+      setProfileExists(true);
+    }
   };
 
   // ═══════════════════════════════════════════════════════════════════════════
@@ -275,10 +327,30 @@ export default function Step1OfficersCommittee({
     }
   }, []);
 
+  const loadProfile = useCallback(async () => {
+    try {
+      const p = await fetchVskProfile();
+      if (p) {
+        setProfileExists(true);
+        setProfileForm({
+          addressLine1: p.addressLine1 ?? '',
+          addressLine2: p.addressLine2 ?? '',
+          city: p.city ?? '',
+          pincode: p.pincode ?? '',
+          facilitatedBy: p.facilitatedBy ?? '',
+          otherSchemeName: p.otherSchemeName ?? '',
+        });
+      }
+    } catch (err) {
+      console.error('Failed to load VSK profile fields', err);
+    }
+  }, []);
+
   useEffect(() => {
     loadOfficers();
     loadMembers();
-  }, [loadOfficers, loadMembers]);
+    loadProfile();
+  }, [loadOfficers, loadMembers, loadProfile]);
 
   // ═══════════════════════════════════════════════════════════════════════════
   // Officer Edit Handlers
@@ -363,8 +435,13 @@ export default function Step1OfficersCommittee({
         }
       }
 
+      const savedRole = editRole;
       handleEditDialogClose();
       await loadOfficers();
+      // Keep the inline history panel fresh if it's open for this role.
+      if (savedRole && expandedHistory[savedRole]) {
+        await loadInlineHistory(savedRole);
+      }
     } catch (err) {
       console.error('Failed to save officer', err);
       showSnackbar('Failed to save officer changes', 'error');
@@ -379,20 +456,24 @@ export default function Step1OfficersCommittee({
   // Officer History Dialog Handlers
   // ═══════════════════════════════════════════════════════════════════════════
 
-  const openHistoryDialog = async (role: OfficerRole) => {
-    setHistoryRole(role);
-    setHistoryOpen(true);
-    setHistoryLoading(true);
+  /** Load this role's full history inline (lazy) and toggle the panel. */
+  const loadInlineHistory = useCallback(async (role: OfficerRole) => {
+    setInlineHistoryLoading(prev => ({ ...prev, [role]: true }));
     try {
       const data = await fetchOfficerHistory(role);
-      setHistoryData(data);
+      setInlineHistory(prev => ({ ...prev, [role]: data }));
     } catch (err) {
-      console.error('Failed to load history', err);
+      console.error('Failed to load inline history', err);
       showSnackbar('Failed to load officer history', 'error');
-      setHistoryData([]);
     } finally {
-      setHistoryLoading(false);
+      setInlineHistoryLoading(prev => ({ ...prev, [role]: false }));
     }
+  }, []);
+
+  const toggleInlineHistory = (role: OfficerRole) => {
+    const willExpand = !expandedHistory[role];
+    setExpandedHistory(prev => ({ ...prev, [role]: willExpand }));
+    if (willExpand) loadInlineHistory(role);
   };
 
   // ═══════════════════════════════════════════════════════════════════════════
@@ -483,13 +564,13 @@ export default function Step1OfficersCommittee({
             </Box>
             <Box sx={{ display: 'flex', gap: 1 }}>
               <Button
-                variant="outlined"
+                variant="text"
                 size="small"
                 startIcon={<HistoryIcon />}
-                onClick={() => openHistoryDialog(role)}
+                onClick={() => toggleInlineHistory(role)}
                 sx={{ textTransform: 'none' }}
               >
-                View History
+                {expandedHistory[role] ? 'Hide History' : 'View History'}
               </Button>
               {!isReadOnly && officer && (
                 <Button
@@ -521,6 +602,14 @@ export default function Step1OfficersCommittee({
           {/* Officer data display (read-only) */}
           {officer ? (
             <Grid container spacing={2}>
+              <Grid item xs={12}>
+                <Chip
+                  size="small"
+                  color="success"
+                  label="Current office holder"
+                  sx={{ fontWeight: 500 }}
+                />
+              </Grid>
               <Grid item xs={12} sm={6}>
                 <TextField
                   fullWidth size="small" label="Name"
@@ -557,6 +646,63 @@ export default function Step1OfficersCommittee({
               No {ROLE_LABELS[role]} assigned yet. Click "Add" to assign one.
             </Typography>
           )}
+
+          {/* Inline history panel — current + previous holders, on the page */}
+          <Collapse in={expandedHistory[role]} unmountOnExit>
+            <Box sx={{ mt: 2 }}>
+              <Divider sx={{ mb: 1.5 }} />
+              <Typography variant="caption" fontWeight={600} color="text.secondary" sx={{ display: 'block', mb: 1 }}>
+                History — current and previous {ROLE_LABELS[role]} holders
+              </Typography>
+              {inlineHistoryLoading[role] ? (
+                <Box sx={{ display: 'flex', justifyContent: 'center', py: 2 }}>
+                  <CircularProgress size={22} />
+                </Box>
+              ) : inlineHistory[role].length === 0 ? (
+                <Typography variant="body2" color="text.secondary" sx={{ fontStyle: 'italic' }}>
+                  No history recorded yet.
+                </Typography>
+              ) : (
+                <TableContainer component={Paper} variant="outlined">
+                  <Table size="small">
+                    <TableHead>
+                      <TableRow sx={{ bgcolor: '#F8FAFC' }}>
+                        <TableCell sx={{ fontWeight: 600 }}>Status</TableCell>
+                        <TableCell sx={{ fontWeight: 600 }}>Name</TableCell>
+                        <TableCell sx={{ fontWeight: 600 }}>Designation</TableCell>
+                        <TableCell sx={{ fontWeight: 600 }}>Phone</TableCell>
+                        <TableCell sx={{ fontWeight: 600 }}>From</TableCell>
+                        <TableCell sx={{ fontWeight: 600 }}>To</TableCell>
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {inlineHistory[role].map((h, idx) => {
+                        const isCurrent = h.isActive === 1;
+                        return (
+                          <TableRow key={h.id ?? idx} sx={isCurrent ? { bgcolor: '#F0FDF4' } : undefined}>
+                            <TableCell>
+                              <Chip
+                                size="small"
+                                label={isCurrent ? 'Current' : 'Previous'}
+                                color={isCurrent ? 'success' : 'default'}
+                                variant={isCurrent ? 'filled' : 'outlined'}
+                                sx={{ fontSize: '0.65rem', height: 20 }}
+                              />
+                            </TableCell>
+                            <TableCell>{h.name || '—'}</TableCell>
+                            <TableCell>{h.designation || '—'}</TableCell>
+                            <TableCell>{h.phone || '—'}</TableCell>
+                            <TableCell>{h.startDate ? new Date(h.startDate).toLocaleDateString('en-IN') : '—'}</TableCell>
+                            <TableCell>{h.endDate ? new Date(h.endDate).toLocaleDateString('en-IN') : (isCurrent ? 'Present' : '—')}</TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                </TableContainer>
+              )}
+            </Box>
+          </Collapse>
         </CardContent>
       </Card>
     );
@@ -579,6 +725,70 @@ export default function Step1OfficersCommittee({
       <Typography variant="h6" fontWeight={600} sx={{ mb: 3, color: '#1E293B' }}>
         Officers & Committee Members
       </Typography>
+
+      {/* VSK Address & Facilitation */}
+      <Card sx={{ mb: 3, borderRadius: 2, border: '1px solid #E2E8F0' }}>
+        <CardContent sx={{ p: 3 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+            <PersonIcon sx={{ color: '#7C3AED' }} />
+            <Typography variant="subtitle1" fontWeight={600}>VSK Address &amp; Facilitation</Typography>
+          </Box>
+          <Grid container spacing={2}>
+            <Grid item xs={12} sm={6}>
+              <TextField
+                fullWidth size="small" label="Address Line 1 *"
+                value={profileForm.addressLine1}
+                onChange={e => updateProfileField('addressLine1', e.target.value)}
+                error={!!profileErrors.addressLine1} helperText={profileErrors.addressLine1}
+                InputProps={{ readOnly: isReadOnly }} inputProps={{ maxLength: 500 }}
+              />
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <TextField
+                fullWidth size="small" label="Address Line 2"
+                value={profileForm.addressLine2}
+                onChange={e => updateProfileField('addressLine2', e.target.value)}
+                InputProps={{ readOnly: isReadOnly }} inputProps={{ maxLength: 500 }}
+              />
+            </Grid>
+            <Grid item xs={12} sm={4}>
+              <TextField
+                fullWidth size="small" label="City *"
+                value={profileForm.city}
+                onChange={e => updateProfileField('city', e.target.value)}
+                error={!!profileErrors.city} helperText={profileErrors.city}
+                InputProps={{ readOnly: isReadOnly }} inputProps={{ maxLength: 200 }}
+              />
+            </Grid>
+            <Grid item xs={12} sm={4}>
+              <TextField
+                fullWidth size="small" label="Pincode *"
+                value={profileForm.pincode}
+                onChange={e => updateProfileField('pincode', e.target.value.replace(/[^0-9]/g, ''))}
+                error={!!profileErrors.pincode} helperText={profileErrors.pincode}
+                InputProps={{ readOnly: isReadOnly }} inputProps={{ maxLength: 6 }}
+              />
+            </Grid>
+            <Grid item xs={12} sm={4}>
+              <TextField
+                fullWidth size="small" label="Facilitated By *"
+                value={profileForm.facilitatedBy}
+                onChange={e => updateProfileField('facilitatedBy', e.target.value)}
+                error={!!profileErrors.facilitatedBy} helperText={profileErrors.facilitatedBy}
+                InputProps={{ readOnly: isReadOnly }} inputProps={{ maxLength: 200 }}
+              />
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <TextField
+                fullWidth size="small" label="Other Scheme Name"
+                value={profileForm.otherSchemeName}
+                onChange={e => updateProfileField('otherSchemeName', e.target.value)}
+                InputProps={{ readOnly: isReadOnly }} inputProps={{ maxLength: 200 }}
+              />
+            </Grid>
+          </Grid>
+        </CardContent>
+      </Card>
 
       {/* Officer Blocks */}
       {OFFICER_ROLES.map((role) => renderOfficerBlock(role))}
@@ -678,12 +888,18 @@ export default function Step1OfficersCommittee({
           <Button
             variant="contained"
             onClick={async () => {
+              // Validate VSK address/facilitation fields.
+              if (!validateProfile()) {
+                showSnackbar('Please complete the required VSK Address & Facilitation fields.', 'error');
+                return;
+              }
               // Validate: at least Secretary must be assigned
               if (!officers.SECRETARY) {
                 showSnackbar('Please assign a Secretary before proceeding.', 'error');
                 return;
               }
               try {
+                await saveProfileFields();
                 await saveAndNext({ step: 1, data: {} });
                 showSnackbar('Step 1 saved successfully.');
                 _onStepComplete?.();
@@ -834,90 +1050,6 @@ export default function Step1OfficersCommittee({
             sx={{ bgcolor: '#7C3AED', '&:hover': { bgcolor: '#6D28D9' } }}
           >
             {editSaving ? <CircularProgress size={20} /> : 'Save'}
-          </Button>
-        </DialogActions>
-      </Dialog>
-
-      {/* ═══════════════════════════════════════════════════════════════════════
-          Officer History Dialog
-          ═══════════════════════════════════════════════════════════════════ */}
-      <Dialog
-        open={historyOpen}
-        onClose={() => setHistoryOpen(false)}
-        maxWidth="md"
-        fullWidth
-      >
-        <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <Typography variant="h6" fontWeight={600}>
-            {ROLE_LABELS[historyRole]} — Version History
-          </Typography>
-        </DialogTitle>
-        <DialogContent dividers>
-          {historyLoading ? (
-            <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
-              <CircularProgress />
-            </Box>
-          ) : (
-            <TableContainer component={Paper} variant="outlined">
-              <Table size="small">
-                <TableHead>
-                  <TableRow sx={{ bgcolor: '#F8FAFC' }}>
-                    <TableCell sx={{ fontWeight: 600 }}>Name</TableCell>
-                    <TableCell sx={{ fontWeight: 600 }}>Designation</TableCell>
-                    <TableCell sx={{ fontWeight: 600 }}>Phone</TableCell>
-                    <TableCell sx={{ fontWeight: 600 }}>Email</TableCell>
-                    <TableCell sx={{ fontWeight: 600 }}>Start Date</TableCell>
-                    <TableCell sx={{ fontWeight: 600 }}>End Date</TableCell>
-                    <TableCell sx={{ fontWeight: 600 }}>Status</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {historyData.map((entry, idx) => (
-                    <TableRow
-                      key={entry.id || idx}
-                      sx={{
-                        bgcolor: entry.isActive ? '#F0FDF4' : 'inherit',
-                        '&:hover': {
-                          bgcolor: entry.isActive ? '#DCFCE7' : '#F8FAFC',
-                        },
-                      }}
-                    >
-                      <TableCell>{entry.name}</TableCell>
-                      <TableCell>{entry.designation || '—'}</TableCell>
-                      <TableCell>{entry.phone || '—'}</TableCell>
-                      <TableCell>{entry.email || '—'}</TableCell>
-                      <TableCell>{entry.startDate || '—'}</TableCell>
-                      <TableCell>{entry.endDate || '—'}</TableCell>
-                      <TableCell>
-                        <Typography
-                          variant="body2"
-                          sx={{
-                            fontWeight: 600,
-                            color: entry.isActive ? '#16A34A' : '#6B7280',
-                          }}
-                        >
-                          {entry.isActive ? 'Active' : 'Inactive'}
-                        </Typography>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                  {historyData.length === 0 && (
-                    <TableRow>
-                      <TableCell colSpan={7} align="center" sx={{ py: 3 }}>
-                        <Typography variant="body2" color="text.secondary">
-                          No history records found.
-                        </Typography>
-                      </TableCell>
-                    </TableRow>
-                  )}
-                </TableBody>
-              </Table>
-            </TableContainer>
-          )}
-        </DialogContent>
-        <DialogActions sx={{ px: 3, py: 2 }}>
-          <Button onClick={() => setHistoryOpen(false)} variant="outlined">
-            Close
           </Button>
         </DialogActions>
       </Dialog>
