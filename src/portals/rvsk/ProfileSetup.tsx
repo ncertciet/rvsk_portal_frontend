@@ -24,8 +24,8 @@ import {
   validatePhone,
   validatePassword,
   validateEmail,
-  validateOptionalEmail,
-  validateOptionalMobile,
+  //   validateOptionalEmail,
+  //   validateOptionalMobile,
 } from "../../utils/validators";
 
 export default function ProfileSetup() {
@@ -34,12 +34,15 @@ export default function ProfileSetup() {
   const user = useSelector((state: RootState) => state.auth.user);
   const token = useSelector((state: RootState) => state.auth.accessToken);
 
+  console.log("ProfileSetup - Redux user:", user);
+  console.log("ProfileSetup - Redux user role:", user?.role);
+
   const [phone, setPhone] = useState("");
-  const [mobileNumber, setMobileNumber] = useState("");
+  //   const [mobileNumber, setMobileNumber] = useState("");
   const [designation, setDesignation] = useState("");
   const [department, setDepartment] = useState("");
   const [userEmail, setUserEmail] = useState("");
-  const [contactEmail, setContactEmail] = useState("");
+  //   const [contactEmail, setContactEmail] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
@@ -48,15 +51,13 @@ export default function ProfileSetup() {
 
   const pwValidation = validatePassword(newPassword);
   const phoneError = touched.phone ? validatePhone(phone) : null;
-  const mobileError = touched.mobile
-    ? validateOptionalMobile(mobileNumber)
-    : null;
-  const contactEmailError = touched.contactEmail
-    ? validateEmail(contactEmail)
-    : null;
-  const userEmailError = touched.userEmail
-    ? validateOptionalEmail(userEmail)
-    : null;
+  //   const mobileError = touched.mobile
+  //     ? validateOptionalMobile(mobileNumber)
+  //     : null;
+  //   const contactEmailError = touched.contactEmail
+  //     ? validateEmail(contactEmail)
+  //     : null;
+  const userEmailError = touched.userEmail ? validateEmail(userEmail) : null;
   const confirmError =
     touched.confirm && newPassword !== confirmPassword
       ? "Passwords do not match"
@@ -76,9 +77,9 @@ export default function ProfileSetup() {
 
     const fieldErr = [
       validatePhone(phone), // mandatory
-      validateEmail(contactEmail), // mandatory (spec .6)
-      validateOptionalMobile(mobileNumber),
-      validateOptionalEmail(userEmail),
+      //   validateEmail(contactEmail), // mandatory (spec .6)
+      //   validateOptionalMobile(mobileNumber),
+      validateEmail(userEmail),
     ].filter(Boolean);
 
     if (fieldErr.length > 0) {
@@ -98,11 +99,11 @@ export default function ProfileSetup() {
     try {
       await apiClient.put("/auth/complete-profile", {
         phone: phone.trim(),
-        mobileNumber: mobileNumber.trim() || undefined,
+        // mobileNumber: mobileNumber.trim() || undefined,
         designation: designation.trim() || undefined,
         department: department.trim() || undefined,
         userEmail: userEmail.trim() || undefined,
-        contactEmail: contactEmail.trim(),
+        // contactEmail: contactEmail.trim(),
         newPassword,
       });
       if (user && token) {
@@ -166,6 +167,19 @@ export default function ProfileSetup() {
             <Grid item xs={12} sm={6}>
               <TextField
                 fullWidth
+                label="User Email"
+                value={userEmail}
+                onChange={(e) => setUserEmail(e.target.value)}
+                onBlur={() => setTouched((t) => ({ ...t, userEmail: true }))}
+                error={!!userEmailError}
+                helperText={userEmailError || "Required"}
+                type="email"
+                required
+              />
+            </Grid>
+            {/* <Grid item xs={12} sm={6}>
+              <TextField
+                fullWidth
                 label="Mobile Number"
                 value={mobileNumber}
                 onChange={(e) => setMobileNumber(e.target.value)}
@@ -175,7 +189,7 @@ export default function ProfileSetup() {
                 placeholder="9876543210"
                 inputProps={{ maxLength: 10 }}
               />
-            </Grid>
+            </Grid> */}
             <Grid item xs={12} sm={6}>
               <TextField
                 fullWidth
@@ -194,19 +208,8 @@ export default function ProfileSetup() {
                 placeholder="Education Department"
               />
             </Grid>
-            <Grid item xs={12} sm={6}>
-              <TextField
-                fullWidth
-                label="User Email"
-                value={userEmail}
-                onChange={(e) => setUserEmail(e.target.value)}
-                onBlur={() => setTouched((t) => ({ ...t, userEmail: true }))}
-                error={!!userEmailError}
-                helperText={userEmailError || "Optional"}
-                type="email"
-              />
-            </Grid>
-            <Grid item xs={12} sm={6}>
+
+            {/* <Grid item xs={12} sm={6}>
               <TextField
                 fullWidth
                 label="Contact Email"
@@ -218,7 +221,7 @@ export default function ProfileSetup() {
                 type="email"
                 required
               />
-            </Grid>
+            </Grid> */}
           </Grid>
 
           <Typography variant="subtitle2" sx={{ mt: 2, mb: 1 }}>

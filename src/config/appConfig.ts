@@ -65,11 +65,11 @@ export const appConfig = {
   },
 } as const;
 
-console.log("======================================");
-console.log("RVSK Application Configuration");
-console.log("======================================");
-console.log("Environment:", appConfig.environment);
-console.log("Portal API:", appConfig.api.portal);
-console.log("6A API:", appConfig.api.sixA);
-console.log("Schemes API:", appConfig.api.schemes);
-console.log("======================================");
+// console.log("======================================");
+// console.log("RVSK Application Configuration");
+// console.log("======================================");
+// console.log("Environment:", appConfig.environment);
+// console.log("Portal API:", appConfig.api.portal);
+// console.log("6A API:", appConfig.api.sixA);
+// console.log("Schemes API:", appConfig.api.schemes);
+// console.log("======================================");

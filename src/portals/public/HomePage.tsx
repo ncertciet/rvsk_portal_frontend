@@ -23,40 +23,69 @@ import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
 import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 import apiClient from "../../services/apiClient";
 
+// Home slider images
+import home1 from "../../assets/home-slider/home1.png";
+import home2 from "../../assets/home-slider/home2.png";
+import home3 from "../../assets/home-slider/home3.png";
+import home4 from "../../assets/home-slider/home4.png";
+import home13 from "../../assets/home-slider/home13.png";
+import home6 from "../../assets/home-slider/home6.png";
+import home7 from "../../assets/home-slider/home7.png";
+import home8 from "../../assets/home-slider/home8.png";
+import home9 from "../../assets/home-slider/home9.png";
+import home10 from "../../assets/home-slider/home10.png";
+import home11 from "../../assets/home-slider/home11.png";
+import home12 from "../../assets/home-slider/home12.png";
+
 // ─── Banner Slides Data ─────────────────────────────────────────────────────
+// const BANNER_SLIDES = [
+//   {
+//     title: "NISHTHA",
+//     tagline:
+//       "Improving quality of school education through integrated teacher training.",
+//     bgColor: "#0E4DA4",
+//     circles: ["#FF6B6B", "#4ECDC4", "#45B7D1"],
+//   },
+//   {
+//     title: "PM SHRI",
+//     tagline: "PM Schools for Rising India — Preparing Future Ready Citizens",
+//     bgColor: "#1A4F99",
+//     circles: ["#F7DC6F", "#82E0AA", "#BB8FCE"],
+//   },
+//   {
+//     title: "DIKSHA",
+//     tagline: "Way to unlimited digital resources for education",
+//     bgColor: "#059669",
+//     circles: ["#F1948A", "#85C1E9", "#F9E79F"],
+//   },
+//   {
+//     title: "NIPUN Bharat",
+//     tagline:
+//       "National Initiative for Proficiency in Reading with Understanding and Numeracy",
+//     bgColor: "#D97706",
+//     circles: ["#AED6F1", "#A3E4D7", "#F5B7B1"],
+//   },
+//   {
+//     title: "UDISE+",
+//     tagline: "Unified District Information System for Education",
+//     bgColor: "#7C3AED",
+//     circles: ["#FAD7A0", "#A9DFBF", "#D7BDE2"],
+//   },
+// ];
+
 const BANNER_SLIDES = [
-  {
-    title: "NISHTHA",
-    tagline:
-      "Improving quality of school education through integrated teacher training.",
-    bgColor: "#0E4DA4",
-    circles: ["#FF6B6B", "#4ECDC4", "#45B7D1"],
-  },
-  {
-    title: "PM SHRI",
-    tagline: "PM Schools for Rising India — Preparing Future Ready Citizens",
-    bgColor: "#1A4F99",
-    circles: ["#F7DC6F", "#82E0AA", "#BB8FCE"],
-  },
-  {
-    title: "DIKSHA",
-    tagline: "Way to unlimited digital resources for education",
-    bgColor: "#059669",
-    circles: ["#F1948A", "#85C1E9", "#F9E79F"],
-  },
-  {
-    title: "NIPUN Bharat",
-    tagline:
-      "National Initiative for Proficiency in Reading with Understanding and Numeracy",
-    bgColor: "#D97706",
-    circles: ["#AED6F1", "#A3E4D7", "#F5B7B1"],
-  },
-  {
-    title: "UDISE+",
-    tagline: "Unified District Information System for Education",
-    bgColor: "#7C3AED",
-    circles: ["#FAD7A0", "#A9DFBF", "#D7BDE2"],
-  },
+  { image: home1, alt: "RVSK Home Banner 1" },
+  { image: home2, alt: "RVSK Home Banner 2" },
+  { image: home3, alt: "RVSK Home Banner 3" },
+  { image: home4, alt: "RVSK Home Banner 4" },
+  { image: home6, alt: "RVSK Home Banner 6" },
+  { image: home7, alt: "RVSK Home Banner 7" },
+  { image: home8, alt: "RVSK Home Banner 8" },
+  { image: home9, alt: "RVSK Home Banner 9" },
+  { image: home10, alt: "RVSK Home Banner 10" },
+  { image: home11, alt: "RVSK Home Banner 11" },
+  { image: home12, alt: "RVSK Home Banner 12" },
+  { image: home13, alt: "RVSK Home Banner 13" },
 ];
 
 // ─── Scheme Tiles Data ──────────────────────────────────────────────────────
@@ -313,13 +342,14 @@ export default function HomePage() {
   // ═══════════════════════════════════════════════════════════════════════════════
   return (
     <Box>
-      {/* ═══ Section 1: Full-width Banner Carousel ═══ */}
+      {/* ═══ Section 1: Full-width Image Banner Carousel ═══ */}
       <Box
         sx={{
           position: "relative",
           width: "100%",
-          height: { xs: 250, md: 400 },
+          height: { xs: 220, sm: 300, md: 400 },
           overflow: "hidden",
+          backgroundColor: "#E5E7EB",
         }}
       >
         {/* Slides Container */}
@@ -338,89 +368,31 @@ export default function HomePage() {
               sx={{
                 width: `${100 / totalSlides}%`,
                 height: "100%",
-                background: `linear-gradient(135deg, ${slide.bgColor} 0%, #0891B2 100%)`,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
+                flexShrink: 0,
                 position: "relative",
-                px: { xs: 3, md: 8 },
               }}
             >
-              {/* Decorative circles (left side) */}
               <Box
+                component="img"
+                src={slide.image}
+                alt={slide.alt}
                 sx={{
-                  display: { xs: "none", md: "flex" },
-                  gap: 2,
-                  alignItems: "center",
-                  mr: 6,
+                  width: "100%",
+                  height: "100%",
+                  display: "block",
+                  objectFit: "cover",
+                  objectPosition: "center",
                 }}
-              >
-                {slide.circles.map((color, ci) => (
-                  <Box
-                    key={ci}
-                    sx={{
-                      width: ci === 1 ? 100 : 70,
-                      height: ci === 1 ? 100 : 70,
-                      borderRadius: "50%",
-                      backgroundColor: color,
-                      opacity: 0.85,
-                      boxShadow: "0 4px 20px rgba(0,0,0,0.15)",
-                    }}
-                  />
-                ))}
-              </Box>
+              />
 
-              {/* Slide content (right side) */}
-              <Box
-                sx={{ textAlign: { xs: "center", md: "left" }, maxWidth: 500 }}
-              >
-                <Box
-                  sx={{
-                    width: 60,
-                    height: 60,
-                    borderRadius: "50%",
-                    backgroundColor: "rgba(255,255,255,0.2)",
-                    mb: 2,
-                    mx: { xs: "auto", md: 0 },
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                  }}
-                >
-                  <Typography sx={{ fontSize: "1.5rem" }}>📘</Typography>
-                </Box>
-                <Typography
-                  sx={{
-                    color: "#FFFFFF",
-                    fontWeight: 800,
-                    fontSize: { xs: "1.5rem", md: "2.5rem" },
-                    lineHeight: 1.2,
-                    mb: 1,
-                  }}
-                >
-                  {slide.title}
-                </Typography>
-                <Typography
-                  sx={{
-                    color: "rgba(255,255,255,0.9)",
-                    fontSize: { xs: "0.85rem", md: "1.1rem" },
-                    lineHeight: 1.5,
-                  }}
-                >
-                  {slide.tagline}
-                </Typography>
-              </Box>
-
-              {/* Wavy bottom decoration */}
+              {/* Optional dark overlay */}
               <Box
                 sx={{
                   position: "absolute",
-                  bottom: 0,
-                  left: 0,
-                  right: 0,
-                  height: 40,
+                  inset: 0,
                   background:
-                    "linear-gradient(to top, rgba(255,255,255,0.1), transparent)",
+                    "linear-gradient(to right, rgba(0,0,0,0.15), transparent 50%, rgba(0,0,0,0.1))",
+                  pointerEvents: "none",
                 }}
               />
             </Box>
@@ -436,11 +408,14 @@ export default function HomePage() {
             left: { xs: 8, md: 20 },
             top: "50%",
             transform: "translateY(-50%)",
-            backgroundColor: "rgba(255,255,255,0.3)",
+            zIndex: 10,
+            backgroundColor: "rgba(0,0,0,0.35)",
             color: "#FFFFFF",
             width: { xs: 36, md: 48 },
             height: { xs: 36, md: 48 },
-            "&:hover": { backgroundColor: "rgba(255,255,255,0.5)" },
+            "&:hover": {
+              backgroundColor: "rgba(0,0,0,0.55)",
+            },
           }}
         >
           <ChevronLeftIcon />
@@ -455,11 +430,14 @@ export default function HomePage() {
             right: { xs: 8, md: 20 },
             top: "50%",
             transform: "translateY(-50%)",
-            backgroundColor: "rgba(255,255,255,0.3)",
+            zIndex: 10,
+            backgroundColor: "rgba(0,0,0,0.35)",
             color: "#FFFFFF",
             width: { xs: 36, md: 48 },
             height: { xs: 36, md: 48 },
-            "&:hover": { backgroundColor: "rgba(255,255,255,0.5)" },
+            "&:hover": {
+              backgroundColor: "rgba(0,0,0,0.55)",
+            },
           }}
         >
           <ChevronRightIcon />
@@ -474,6 +452,11 @@ export default function HomePage() {
             transform: "translateX(-50%)",
             display: "flex",
             gap: 1,
+            zIndex: 10,
+            backgroundColor: "rgba(0,0,0,0.25)",
+            borderRadius: 10,
+            px: 1.5,
+            py: 0.75,
           }}
         >
           {BANNER_SLIDES.map((_, index) => (
@@ -481,13 +464,13 @@ export default function HomePage() {
               key={index}
               onClick={() => setCurrentSlide(index)}
               sx={{
-                width: 10,
-                height: 10,
-                borderRadius: "50%",
+                width: currentSlide === index ? 22 : 9,
+                height: 9,
+                borderRadius: 10,
                 backgroundColor:
-                  currentSlide === index ? "#FFFFFF" : "rgba(255,255,255,0.5)",
+                  currentSlide === index ? "#FFFFFF" : "rgba(255,255,255,0.55)",
                 cursor: "pointer",
-                transition: "background-color 0.3s",
+                transition: "all 0.3s ease",
               }}
             />
           ))}
