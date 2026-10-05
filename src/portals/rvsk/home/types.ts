@@ -17,6 +17,7 @@ export interface GalleryImage {
   stateCode: string;
   caption: string;
   uploadedAt: string;
+  isProfileImage?: boolean;
 }
 
 export interface AssignedForm {

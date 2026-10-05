@@ -65,6 +65,9 @@ export interface DashboardFilterContext {
   /** Update a leading-filter value from a child page (e.g. Trends presets
    * writing the computed From/To back into the top-row date-range picker). */
   setLeading: (key: string, value: string) => void;
+  /** Programmatically drill the master cascade to a geo level (map/bar clicks).
+   * Sets that level's key; the cascade effects clear downstream + load children. */
+  drillTo: (level: 'state' | 'district' | 'block' | 'cluster' | 'school', key: string) => void;
   selectedDate: string;
   stateKey: string;
   districtKey: string;
@@ -92,7 +95,9 @@ function initLeadingValues(leading: LeadingFilter[]): LeadingValues {
   const v: LeadingValues = {};
   for (const f of leading) {
     if (f.type === 'date') {
-      v[f.key ?? 'date'] = f.default ?? toISO(new Date());
+      // Default EMPTY so the backend resolves the latest date WITH data
+      // (requirement B2); the page backfills the picker from meta.asOfDate.
+      v[f.key ?? 'date'] = f.default ?? '';
     } else if (f.type === 'dateRange') {
       const months = f.maxMonths ?? 6;
       v[f.fromKey ?? 'fromDate'] = f.defaultFrom ?? monthsAgoISO(1);
@@ -124,6 +129,19 @@ export default function DashboardFilterLayout({
   );
   const setLeading = (key: string, value: string) =>
     setLeadingValues((prev) => ({ ...prev, [key]: value }));
+
+  // Programmatic drill from map/bar clicks. Setting a level's key triggers the
+  // cascade effects below (which load that level's children + clear downstream).
+  const drillTo = (
+    level: 'state' | 'district' | 'block' | 'cluster' | 'school',
+    key: string,
+  ) => {
+    if (level === 'state') setStateKey(key);
+    else if (level === 'district') setDistrictKey(key);
+    else if (level === 'block') setBlockKey(key);
+    else if (level === 'cluster') setClusterKey(key);
+    else if (level === 'school') setUdiseCode(key);
+  };
 
   // Master cascade state.
   const [stateKey, setStateKey] = useState<string>('');
@@ -250,6 +268,7 @@ export default function DashboardFilterLayout({
   const filterContext: DashboardFilterContext = {
     leading: leadingValues,
     setLeading,
+    drillTo,
     selectedDate,
     stateKey,
     districtKey,

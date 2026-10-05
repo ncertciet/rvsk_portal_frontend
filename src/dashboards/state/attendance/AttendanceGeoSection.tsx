@@ -1,42 +1,45 @@
-import { useState, useMemo, useEffect } from 'react';
-import { Box, Typography, Paper, Grid, ToggleButtonGroup, ToggleButton, Tabs, Tab } from '@mui/material';
+import { useMemo, useState } from 'react';
+import { Box, Typography, Paper, Grid, ToggleButtonGroup, ToggleButton } from '@mui/material';
 import ReactECharts from 'echarts-for-react';
-import * as echarts from 'echarts';
-import { feature } from 'topojson-client';
+import { useQuery } from '@tanstack/react-query';
+import Map, { Marker, NavigationControl } from 'react-map-gl/maplibre';
+import 'maplibre-gl/dist/maplibre-gl.css';
 import { ATT_COLORS } from './attendanceColors';
-import {
-  mockStateAttendanceTeachers,
-  mockStateAttendanceStudents,
-  StateAttendanceRow,
-} from './attendanceMockData';
+import { attendanceApi, GeoRegion } from './attendanceApi';
+import { useDashboardFilters } from '../../shared/DashboardFilterLayout';
 
 /**
  * Bottom section of Page 1:
- *   LEFT  — India choropleth: each state coloured by attendance % band.
- *   RIGHT — State/UT-wise Reported vs Not-Reported bars, TEACHERS/STUDENTS toggle.
- * Fully data-driven: both the map colours and the bars read the same
- * per-state dataset (mock now; swap for the live API in one place).
- *
- * Map source: udit-001/india-maps-data (TopoJSON, states object, `st_nm`).
- * Registered with ECharts once as 'india' (TopoJSON → GeoJSON via topojson-client).
+ *   LEFT  — "Attendance by Geography": a MapLibre (OpenStreetMap) map with one
+ *           coloured dot per child region at its centroid, coloured by STUDENT
+ *           attendance % (4 bands). Click a dot to drill
+ *           national→state→district→block→cluster→school (lat/long points).
+ *   RIGHT — "State/UT-wise Attendance": 100% stacked Reported/Not-Reported bar
+ *           (teacher reported % / student attendance %), sorted desc, click to
+ *           drill into that region.
+ * Both read the same drill-aware /attendance/geo payload (regions + childLevel).
  */
 
-// India map is loaded once from /public and registered with ECharts as 'india'.
-// Fetched at runtime (not bundled) so the ~886KB TopoJSON stays out of the JS
-// bundle and out of tsc's type inference.
-const MAP_NAME = 'india';
-let mapPromise: Promise<void> | null = null;
-function loadIndiaMap(): Promise<void> {
-  if (!mapPromise) {
-    mapPromise = fetch('/geo/india-topo.json')
-      .then((r) => r.json())
-      .then((topo: any) => {
-        const geo = feature(topo, topo.objects.states);
-        echarts.registerMap(MAP_NAME, geo as any);
-      });
-  }
-  return mapPromise;
-}
+// Free OpenStreetMap raster style (no API key). Attribution shown by the map.
+const OSM_STYLE: any = {
+  version: 8,
+  sources: {
+    osm: {
+      type: 'raster',
+      tiles: ['https://a.tile.openstreetmap.org/{z}/{x}/{y}.png'],
+      tileSize: 256,
+      attribution: '© OpenStreetMap contributors',
+    },
+  },
+  layers: [{ id: 'osm', type: 'raster', source: 'osm' }],
+};
+
+// India bounding box — used to centre the map and to reject garbage coordinates
+// (some master rows have lat/lng like 0.49/1.47).
+const INDIA = { minLat: 6, maxLat: 37.5, minLng: 68, maxLng: 97.5 };
+const inIndia = (lat: number | null, lng: number | null): lat is number =>
+  lat != null && lng != null &&
+  lat >= INDIA.minLat && lat <= INDIA.maxLat && lng >= INDIA.minLng && lng <= INDIA.maxLng;
 
 function SectionBar({ title }: { title: string }) {
   return (
@@ -57,65 +60,29 @@ function SectionBar({ title }: { title: string }) {
 }
 
 const BANDS = [
-  { label: '0% - 25%', color: '#F87171', max: 25 },
-  { label: '25% - 50%', color: '#FBBF24', max: 50 },
-  { label: '50% - 75%', color: '#A3E635', max: 75 },
-  { label: '75% - 100%', color: '#15803D', max: 101 },
+  { label: '0% - 25%', color: '#F87171', lte: 25 },
+  { label: '25% - 50%', color: '#FBBF24', lte: 50 },
+  { label: '50% - 75%', color: '#A3E635', lte: 75 },
+  { label: '75% - 100%', color: '#15803D', lte: 100.01 },
 ];
-
-// Map dataset state names → the geojson `st_nm` names (handle the few that differ).
-const NAME_MAP: Record<string, string> = {
-  'Andaman And Nicobar': 'Andaman and Nicobar Islands',
-  'DNH & DD': 'Dadra and Nagar Haveli and Daman and Diu',
-  'Jammu & Kashmir': 'Jammu and Kashmir',
-};
-const toMapName = (s: string) => NAME_MAP[s] ?? s;
-
-function mapOption(rows: StateAttendanceRow[]) {
-  const data = rows.map((r) => ({ name: toMapName(r.state), value: r.reportedPct }));
-  return {
-    tooltip: {
-      trigger: 'item',
-      formatter: (p: any) => (p.value == null || Number.isNaN(p.value) ? `${p.name}: no data` : `${p.name}: ${p.value}%`),
-    },
-    visualMap: {
-      type: 'piecewise',
-      show: false, // legend is rendered separately to match the reference
-      pieces: [
-        { lte: 25, color: BANDS[0].color },
-        { gt: 25, lte: 50, color: BANDS[1].color },
-        { gt: 50, lte: 75, color: BANDS[2].color },
-        { gt: 75, color: BANDS[3].color },
-      ],
-    },
-    series: [
-      {
-        type: 'map',
-        map: MAP_NAME,
-        roam: false,
-        // Fit fully inside the panel (no clipping); slightly under full size so
-        // the map edges (esp. north/south tips) are never cut off.
-        layoutCenter: ['50%', '50%'],
-        layoutSize: '92%',
-        zoom: 1,
-        emphasis: { label: { show: false }, itemStyle: { areaColor: undefined } },
-        itemStyle: { borderColor: '#fff', borderWidth: 0.5, areaColor: '#E5E7EB' },
-        data,
-      },
-    ],
-  };
+function bandColor(pct: number): string {
+  for (const b of BANDS) if (pct <= b.lte) return b.color;
+  return BANDS[BANDS.length - 1].color;
 }
 
-function barOption(rows: StateAttendanceRow[]) {
-  const sorted = [...rows].sort((a, b) => b.reportedPct - a.reportedPct);
-  const cats = sorted.map((r) => r.state).reverse();
-  const reported = sorted.map((r) => r.reportedPct).reverse();
-  const notReported = sorted.map((r) => 100 - r.reportedPct).reverse();
+// 100% stacked horizontal Reported/Not-Reported bar. `rows` carry a key so a
+// click can drill. Sorted desc; highest at top.
+function barOption(rows: { key: string; name: string; pct: number }[]) {
+  const sorted = [...rows].sort((a, b) => b.pct - a.pct);
+  const cats = sorted.map((r) => r.name).reverse();
+  const reported = sorted.map((r) => r.pct).reverse();
+  const notReported = sorted.map((r) => Math.max(0, 100 - r.pct)).reverse();
   return {
     tooltip: {
       trigger: 'axis',
       axisPointer: { type: 'shadow' },
-      formatter: (p: any[]) => `${p[0].name}<br/>Reported: ${p[0].value}%<br/>Not-Reported: ${p[1].value}%`,
+      formatter: (p: any[]) =>
+        `${p[0].name}<br/>Reported: ${p[0].value}%<br/>Not-Reported: ${p[1].value}%<br/><span style="color:#6B7280">click to drill down</span>`,
     },
     legend: { data: ['Reported', 'Not- Reported'], top: 0, itemWidth: 12, itemHeight: 12 },
     grid: { left: 130, right: 30, top: 28, bottom: 20 },
@@ -128,30 +95,65 @@ function barOption(rows: StateAttendanceRow[]) {
   };
 }
 
-const LEVELS = ['States/UTs', 'Districts', 'Blocks', 'Clusters', 'Schools'];
-
 export default function AttendanceGeoSection() {
   const [audience, setAudience] = useState<'teachers' | 'students'>('teachers');
-  const [level, setLevel] = useState(0);
-  const [mapReady, setMapReady] = useState(false);
 
-  // Load + register the India map once, then allow the map chart to render.
-  useEffect(() => {
-    let active = true;
-    loadIndiaMap().then(() => { if (active) setMapReady(true); }).catch(() => {});
-    return () => { active = false; };
-  }, []);
+  const f = useDashboardFilters();
+  const geoParams = {
+    date: f.selectedDate || undefined,
+    stateKey: f.stateKey || undefined,
+    districtKey: f.districtKey || undefined,
+    blockKey: f.blockKey || undefined,
+    clusterKey: f.clusterKey || undefined,
+  };
+  const { data: geoEnvelope } = useQuery({
+    queryKey: ['attendance', 'geo', geoParams],
+    queryFn: () => attendanceApi.getGeo(geoParams),
+    staleTime: 5 * 60 * 1000,
+  });
+  const regions: GeoRegion[] = geoEnvelope?.data?.regions ?? [];
+  const childLevel = geoEnvelope?.data?.childLevel ?? 'state';
 
-  const rows = audience === 'teachers' ? mockStateAttendanceTeachers : mockStateAttendanceStudents;
-  const mapOpt = useMemo(() => mapOption(rows), [rows]);
-  const barOpt = useMemo(() => barOption(rows), [rows]);
+  // Drill: clicking a dot/bar sets that child level in the shared cascade.
+  const drill = (region: GeoRegion) => f.drillTo(region.level, region.key);
+
+  // Map markers: valid-coordinate regions coloured by student attendance %.
+  const markers = useMemo(
+    () => regions.filter((r) => inIndia(r.lat, r.lng)),
+    [regions],
+  );
+
+  // Bar rows (teacher reported % or student attendance %), keyed for drill.
+  const barRows = useMemo(
+    () =>
+      regions.map((r) => ({
+        key: r.key,
+        name: r.name,
+        level: r.level,
+        pct: audience === 'teachers' ? r.teacherReportedPct : r.studentAttendancePct,
+      })),
+    [regions, audience],
+  );
+  const barOpt = useMemo(() => barOption(barRows), [barRows]);
+  const onBarClick = (p: any) => {
+    // yAxis categories are reversed; find the region by name.
+    const r = regions.find((x) => x.name === p.name);
+    if (r) drill(r);
+  };
+
+  const levelLabel =
+    childLevel === 'state' ? 'States/UTs'
+    : childLevel === 'district' ? 'Districts'
+    : childLevel === 'block' ? 'Blocks'
+    : childLevel === 'cluster' ? 'Clusters'
+    : 'Schools';
 
   return (
     <Grid container spacing={1.25}>
-      {/* LEFT — India choropleth + legend + level tabs */}
+      {/* LEFT — MapLibre map + legend */}
       <Grid item xs={12} md={6}>
         <Paper sx={{ overflow: 'hidden', height: '100%', display: 'flex', flexDirection: 'column' }}>
-          <SectionBar title="Attendance by Geography" />
+          <SectionBar title={`Attendance by Geography — ${levelLabel}`} />
           <Box sx={{ p: 1, flex: 1, display: 'flex', flexDirection: 'column' }}>
             <Box sx={{ display: 'flex', gap: 1.5, justifyContent: 'flex-end', mb: 0.5, flexWrap: 'wrap' }}>
               {BANDS.map((b) => (
@@ -162,24 +164,43 @@ export default function AttendanceGeoSection() {
               ))}
             </Box>
 
-            {mapReady ? (
-              <ReactECharts option={mapOpt} style={{ height: 460, flex: 1 }} notMerge />
-            ) : (
-              <Box sx={{ height: 460, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#9CA3AF', fontSize: '0.8rem' }}>
-                Loading map…
-              </Box>
-            )}
-
-            <Tabs
-              value={level}
-              onChange={(_, v) => setLevel(v)}
-              variant="fullWidth"
-              sx={{ mt: 0.5, minHeight: 34, '& .MuiTab-root': { minHeight: 34, fontSize: '0.72rem', textTransform: 'none', fontWeight: 600 } }}
-            >
-              {LEVELS.map((l) => (
-                <Tab key={l} label={l} />
-              ))}
-            </Tabs>
+            <Box sx={{ height: 460, borderRadius: 1, overflow: 'hidden', position: 'relative' }}>
+              <Map
+                initialViewState={{ longitude: 82.5, latitude: 22.5, zoom: 3.4 }}
+                mapStyle={OSM_STYLE}
+                style={{ width: '100%', height: '100%' }}
+                attributionControl={false}
+              >
+                <NavigationControl position="top-right" showCompass={false} />
+                {markers.map((r) => (
+                  <Marker
+                    key={`${r.level}:${r.key}`}
+                    longitude={r.lng as number}
+                    latitude={r.lat as number}
+                    anchor="center"
+                    onClick={(e) => { e.originalEvent.stopPropagation(); drill(r); }}
+                  >
+                    <Box
+                      title={`${r.name}: ${r.studentAttendancePct}% (click to drill)`}
+                      sx={{
+                        width: 14,
+                        height: 14,
+                        borderRadius: '50%',
+                        bgcolor: bandColor(r.studentAttendancePct),
+                        border: '2px solid #fff',
+                        boxShadow: '0 0 3px rgba(0,0,0,0.4)',
+                        cursor: 'pointer',
+                      }}
+                    />
+                  </Marker>
+                ))}
+              </Map>
+              {markers.length === 0 && (
+                <Box sx={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#9CA3AF', fontSize: '0.78rem', pointerEvents: 'none' }}>
+                  No mappable locations for this selection.
+                </Box>
+              )}
+            </Box>
           </Box>
         </Paper>
       </Grid>
@@ -187,9 +208,14 @@ export default function AttendanceGeoSection() {
       {/* RIGHT — State/UT wise bars + audience toggle */}
       <Grid item xs={12} md={6}>
         <Paper sx={{ overflow: 'hidden', height: '100%', display: 'flex', flexDirection: 'column' }}>
-          <SectionBar title={`State/UT wise Attendance (${audience === 'teachers' ? 'Teachers' : 'Students'})`} />
+          <SectionBar title={`${levelLabel} wise Attendance (${audience === 'teachers' ? 'Teachers' : 'Students'})`} />
           <Box sx={{ p: 1, flex: 1, display: 'flex', flexDirection: 'column' }}>
-            <ReactECharts option={barOpt} style={{ height: 460 }} notMerge />
+            <ReactECharts
+              option={barOpt}
+              style={{ height: 460 }}
+              notMerge
+              onEvents={{ click: onBarClick }}
+            />
             <ToggleButtonGroup
               exclusive
               fullWidth

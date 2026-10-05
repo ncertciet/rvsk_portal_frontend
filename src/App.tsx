@@ -9,6 +9,7 @@ import ContactPage from './portals/public/ContactPage';
 import LoginPage from './portals/public/LoginPage';
 import VskDetails from './portals/rvsk/VskDetails';
 import { VskAdminDashboard } from './portals/rvsk/vsk';
+import EventManagement from './portals/rvsk/events/EventManagement';
 import RvskDashboard from './portals/rvsk/RvskDashboard';
 import { RoleHomePage, VskImageUpload } from './portals/rvsk/home';
 import {
@@ -93,6 +94,7 @@ function App() {
         <Route element={<PortalLayout portalType="rvsk" />}>
           <Route path="/rvsk/home" element={<RoleHomePage />} />
           <Route path="/rvsk/gallery/upload" element={<VskImageUpload />} />
+          <Route path="/rvsk/events" element={<EventManagement />} />
           <Route path="/rvsk/vsk-details" element={<VskDetails />} />
           <Route path="/rvsk/vsk-admin" element={<VskAdminDashboard />} />
 

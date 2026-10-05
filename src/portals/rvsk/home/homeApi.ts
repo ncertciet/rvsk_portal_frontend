@@ -40,6 +40,15 @@ export async function fetchGalleryImages(page = 0, size = 20): Promise<GalleryIm
   return response.data;
 }
 
+/**
+ * One representative image per state — each state's selected VSK Profile Image.
+ * Used by the RVSK/Super Admin home "VSK Gallery" slider.
+ */
+export async function fetchProfileImages(): Promise<GalleryImage[]> {
+  const response = await apiClient.get<GalleryImage[]>('/gallery/profile-images');
+  return response.data;
+}
+
 export async function uploadGalleryImage(file: File, caption: string): Promise<GalleryImage> {
   const formData = new FormData();
   formData.append('file', file);
@@ -53,4 +62,10 @@ export async function uploadGalleryImage(file: File, caption: string): Promise<G
 
 export async function deleteGalleryImage(id: string): Promise<void> {
   await apiClient.delete(`/gallery/images/${id}`);
+}
+
+/** Mark one gallery image as the State's VSK Profile Image. */
+export async function setGalleryProfileImage(id: string): Promise<GalleryImage> {
+  const response = await apiClient.put<GalleryImage>(`/gallery/${id}/profile-image`);
+  return response.data;
 }

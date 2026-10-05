@@ -12,17 +12,19 @@ import { useQuery } from '@tanstack/react-query';
 import { useDashboardFilters } from '../../shared/DashboardFilterLayout';
 import { attendanceApi, TrendData, TrendDimension } from './attendanceApi';
 import { ATT_COLORS } from './attendanceColors';
-import {
-  mockTrends,
-  TrendPoint,
-  TREND_DATE_LABELS,
-  CLASS_KEYS,
-  GENDER_KEYS,
-  CATEGORY_KEYS,
-  mockPresentByClass,
-  mockPresentByGender,
-  mockPresentByCategory,
-} from './attendanceMockData';
+
+/** Daily trend point: date/period label + teacher/student %. */
+interface TrendPoint {
+  date: string;
+  teacher: number;
+  student: number;
+}
+
+// UI chip keys for the Present-card dimension tabs (not data — just the fixed
+// set of selectable labels; actual series come from the live API).
+const CLASS_KEYS = Array.from({ length: 12 }, (_, i) => `Class ${i + 1}`);
+const GENDER_KEYS = ['Male', 'Female', 'Others'] as const;
+const CATEGORY_KEYS = ['General', 'SC', 'ST', 'OBC'] as const;
 
 /**
  * Page 2 — Trends (design.md §8).
@@ -38,7 +40,8 @@ import {
  *   Card 2: "Attendance Present"  — dimension tabs Overall | Class | Gender
  *           | Category. Overall = teacher/student present. Class/Gender/Category
  *           reveal checkbox chips; each checked series is a line (dynamic).
- * Mock-first.
+ * Live data only — no local fallback; empty charts show when the API has no
+ * data for the selected range/scope.
  */
 
 type Dimension = 'Overall' | 'Class' | 'Gender' | 'Category';
@@ -109,30 +112,8 @@ function twoLineOption(points: TrendPoint[], teacherName: string, studentName: s
   };
 }
 
-// Multi-line option (one line per selected series key).
-function multiLineOption(seriesMap: Record<string, number[]>, keys: string[], showPointLabels: boolean) {
-  return {
-    tooltip: { trigger: 'axis', valueFormatter: (v: number) => `${v}%` },
-    legend: { type: 'scroll', top: 4, itemWidth: 16, itemHeight: 8, textStyle: { fontSize: 11 } },
-    grid: { left: 44, right: 24, top: 42, bottom: 56 },
-    xAxis: { type: 'category', data: TREND_DATE_LABELS, axisLabel: { rotate: 40, fontSize: 10, interval: 0, color: '#6B7280' } },
-    yAxis: { type: 'value', min: 0, max: 100, axisLabel: { formatter: '{value}%', color: '#6B7280' }, splitLine: { lineStyle: { color: '#EEF1F6' } } },
-    series: keys.map((k, i) => ({
-      name: k,
-      type: 'line',
-      smooth: true,
-      symbol: 'circle',
-      symbolSize: 4,
-      data: seriesMap[k],
-      itemStyle: { color: SERIES_PALETTE[i % SERIES_PALETTE.length] },
-      lineStyle: { width: 2 },
-      label: showPointLabels ? { show: true, formatter: '{c}%', fontSize: 8 } : { show: false },
-    })),
-  };
-}
-
-// Multi-line option with EXPLICIT x-axis labels (for live data, whose periods
-// come from the API rather than the fixed mock date labels).
+// Multi-line option with EXPLICIT x-axis labels (live data periods come from
+// the API).
 function multiLineOptionWithLabels(
   seriesMap: Record<string, number[]>,
   keys: string[],
@@ -242,8 +223,6 @@ function TabPill({ label, active, onClick }: { label: string; active: boolean; o
 }
 
 export default function AttendanceTrends() {
-  const d = mockTrends;
-
   // The date range is owned by the shared top filter row (its dateRange leading
   // filter). Trends reads From/To from there and the presets write back to it,
   // so there is a single source of truth and one API call for both cards.
@@ -311,23 +290,22 @@ export default function AttendanceTrends() {
     staleTime: 15 * 60 * 1000, // align with the 15–30 min trend TTL
   });
   const live = trendEnvelope?.data ?? null;
-  const isMock = !live;
 
-  // Reported card (participation %) — teacher & student.
+  // Reported card (participation %) — teacher & student. Live only; empty array
+  // when there is no data yet (chart renders with no series).
   const reportedPoints: TrendPoint[] = live
     ? live.reported.map((p) => ({ date: p.period, teacher: p.teacher, student: p.student }))
-    : d.reported;
+    : [];
 
-  // Present card — Overall uses two lines; dimensions use multi-line.
+  // Present card — Overall uses two lines; dimensions use multi-line. Live only.
   const presentOption = useMemo(() => {
     if (dimension === 'Overall') {
       const pts: TrendPoint[] = live?.present.overall
         ? live.present.overall.map((p) => ({ date: p.period, teacher: p.teacher, student: p.student }))
-        : d.present;
+        : [];
       return twoLineOption(pts, 'Teachers (Present) Trend', 'Students (Present) Trend');
     }
-    // Dimensioned: build {seriesLabel: number[]} + shared period labels from live,
-    // else fall back to the mock series.
+    // Dimensioned: build {seriesLabel: number[]} + shared period labels from live.
     const built = live ? buildDimensionSeries(live, dimension) : null;
     if (built) {
       const sel =
@@ -335,10 +313,9 @@ export default function AttendanceTrends() {
       const keys = sel.filter((k) => k in built.series);
       return multiLineOptionWithLabels(built.series, keys, built.labels, dimension !== 'Class');
     }
-    if (dimension === 'Class') return multiLineOption(mockPresentByClass, classSel, false);
-    if (dimension === 'Gender') return multiLineOption(mockPresentByGender, genderSel, true);
-    return multiLineOption(mockPresentByCategory, categorySel, true);
-  }, [dimension, classSel, genderSel, categorySel, d.present, live]);
+    // No live dimensioned data — render an empty chart (no fixed-label lines).
+    return multiLineOptionWithLabels({}, [], [], false);
+  }, [dimension, classSel, genderSel, categorySel, live]);
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.25, height: '100%' }}>
@@ -374,11 +351,6 @@ export default function AttendanceTrends() {
             </ToggleButton>
           ))}
         </ToggleButtonGroup>
-        {isMock && (
-          <Typography sx={{ color: '#9CA3AF', fontSize: '0.62rem', ml: 'auto' }}>
-            Mock preview — live data loads once the ADW cache is populated.
-          </Typography>
-        )}
       </Paper>
 
       {/* Card 1 — Attendance Reported */}
