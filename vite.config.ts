@@ -19,18 +19,8 @@ export default defineConfig(({ mode }) => {
     },
 
     server: {
-      host: "0.0.0.0",
       port: 3000,
-      strictPort: true,
-
       allowedHosts: ["rvsk.diksha.gov.in"],
-
-      hmr: {
-        protocol: "wss",
-        host: "rvsk.diksha.gov.in",
-        clientPort: 443,
-      },
-
       proxy: {
         "/api/v1/schemes": {
           target: env.VITE_SCHEMES_API_URL?.replace("/api/v1", ""),
