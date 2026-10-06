@@ -9,6 +9,11 @@ const __dirname = path.dirname(__filename);
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, ".", "VITE_");
 
+  const isLocal = mode === "development" || mode === "local";
+  const isDev = mode === "dev";
+  const isUat = mode === "uat";
+  const isProd = mode === "production";
+
   return {
     plugins: [react()],
 
@@ -20,15 +25,19 @@ export default defineConfig(({ mode }) => {
 
     server: {
       port: 3000,
-      allowedHosts: ["rvsk.diksha.gov.in"],
 
-      hmr: {
-        protocol: "wss",
-        host: "rvsk.diksha.gov.in",
-        clientPort: 443,
-      },
+      ...(isLocal && {
+        hmr: {
+          host: "localhost",
+          protocol: "ws",
+          port: 3000,
+        },
+      }),
 
-      allowedHosts: ['rvsk.diksha.gov.in'],
+      ...(isDev && {
+        allowedHosts: ["rvsk.diksha.gov.in"],
+        hmr: false,
+      }),
 
       proxy: {
         "/api/v1/schemes": {
