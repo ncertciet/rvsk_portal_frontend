@@ -18,10 +18,6 @@ const getImageUrl = (filePath?: string): string => {
     return "";
   }
 
-  if (filePath.startsWith("http://") || filePath.startsWith("https://")) {
-    return filePath;
-  }
-
   const fileName = filePath.split(/[\\/]/).pop();
 
   if (!fileName) {
@@ -30,7 +26,15 @@ const getImageUrl = (filePath?: string): string => {
 
   const baseUrl = import.meta.env.VITE_PORTAL_API_URL;
 
-  return `${baseUrl.replace(/\/+$/, "")}/gallery/files/${encodeURIComponent(fileName)}`;
+  if (baseUrl) {
+    return `${baseUrl.replace(/\/+$/, "")}/gallery/files/${encodeURIComponent(
+      fileName,
+    )}`;
+  }
+
+  return `${window.location.origin}/rvsk/portal/api/v1/gallery/files/${encodeURIComponent(
+    fileName,
+  )}`;
 };
 
 export default function GalleryCarousel({
