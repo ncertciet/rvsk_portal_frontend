@@ -1,28 +1,54 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect } from "react";
 import {
-  Box, Card, CardContent, Grid, Typography, List, ListItem,
-  ListItemIcon, ListItemText, Skeleton,
-} from '@mui/material';
-import SendIcon from '@mui/icons-material/Send';
-import PublishIcon from '@mui/icons-material/Publish';
-import InboxIcon from '@mui/icons-material/Inbox';
-import DynamicFormIcon from '@mui/icons-material/DynamicForm';
-import ImageIcon from '@mui/icons-material/Image';
-import { Alert } from '@mui/material';
-import { RvskAdminHomeData, GalleryImage } from './types';
-import { fetchRvskAdminHome, fetchProfileImages } from './homeApi';
-import { getApiErrorMessage } from '../../../services/apiError';
-import GalleryCarousel from './GalleryCarousel';
+  Box,
+  Card,
+  CardContent,
+  Grid,
+  Typography,
+  List,
+  ListItem,
+  ListItemIcon,
+  ListItemText,
+  Skeleton,
+} from "@mui/material";
+import SendIcon from "@mui/icons-material/Send";
+import PublishIcon from "@mui/icons-material/Publish";
+import InboxIcon from "@mui/icons-material/Inbox";
+import DynamicFormIcon from "@mui/icons-material/DynamicForm";
+import ImageIcon from "@mui/icons-material/Image";
+import { Alert } from "@mui/material";
+import { RvskAdminHomeData, GalleryImage } from "./types";
+import { fetchRvskAdminHome, fetchGalleryImages } from "./homeApi";
+import { getApiErrorMessage } from "../../../services/apiError";
+import GalleryCarousel from "./GalleryCarousel";
 
 const KPI_CONFIG = [
-  { key: 'formsSent', label: 'Forms Sent', icon: <SendIcon />, color: '#3B82F6', bg: '#EFF6FF' },
-  { key: 'formsPublished', label: 'Forms Published', icon: <PublishIcon />, color: '#8B5CF6', bg: '#F5F3FF' },
-  { key: 'responsesReceived', label: 'Responses Received', icon: <InboxIcon />, color: '#10B981', bg: '#ECFDF5' },
+  {
+    key: "formsSent",
+    label: "Forms Sent",
+    icon: <SendIcon />,
+    color: "#3B82F6",
+    bg: "#EFF6FF",
+  },
+  {
+    key: "formsPublished",
+    label: "Forms Published",
+    icon: <PublishIcon />,
+    color: "#8B5CF6",
+    bg: "#F5F3FF",
+  },
+  {
+    key: "responsesReceived",
+    label: "Responses Received",
+    icon: <InboxIcon />,
+    color: "#10B981",
+    bg: "#ECFDF5",
+  },
 ] as const;
 
 const MODULE_ICONS: Record<string, React.ReactNode> = {
-  Forms: <DynamicFormIcon fontSize="small" sx={{ color: '#8B5CF6' }} />,
-  Gallery: <ImageIcon fontSize="small" sx={{ color: '#10B981' }} />,
+  Forms: <DynamicFormIcon fontSize="small" sx={{ color: "#8B5CF6" }} />,
+  Gallery: <ImageIcon fontSize="small" sx={{ color: "#10B981" }} />,
 };
 
 export default function RvskAdminHome() {
@@ -41,21 +67,24 @@ export default function RvskAdminHome() {
         const homeData = await fetchRvskAdminHome();
         if (!cancelled) setData(homeData);
       } catch (err) {
-        if (!cancelled) setError(getApiErrorMessage(err, 'Failed to load dashboard data'));
+        if (!cancelled)
+          setError(getApiErrorMessage(err, "Failed to load dashboard data"));
       } finally {
         if (!cancelled) setLoading(false);
       }
       // Gallery slider shows each state's selected profile image (one per
       // state). Non-critical — degrade to empty on failure without blocking.
       try {
-        const images = await fetchProfileImages();
+        const images = await fetchGalleryImages();
         if (!cancelled) setGallery(images);
       } catch {
         if (!cancelled) setGallery([]);
       }
     }
     load();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   if (error) {
@@ -102,19 +131,21 @@ export default function RvskAdminHome() {
             <Card
               sx={{
                 borderRadius: 2,
-                boxShadow: '0 1px 3px rgba(0,0,0,0.08)',
-                border: '1px solid #F1F5F9',
+                boxShadow: "0 1px 3px rgba(0,0,0,0.08)",
+                border: "1px solid #F1F5F9",
               }}
             >
-              <CardContent sx={{ display: 'flex', alignItems: 'center', gap: 2, py: 2.5 }}>
+              <CardContent
+                sx={{ display: "flex", alignItems: "center", gap: 2, py: 2.5 }}
+              >
                 <Box
                   sx={{
                     width: 48,
                     height: 48,
                     borderRadius: 2,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
                     bgcolor: kpi.bg,
                     color: kpi.color,
                   }}
@@ -139,18 +170,26 @@ export default function RvskAdminHome() {
       <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1 }}>
         Recent Activities
       </Typography>
-      <Card sx={{ borderRadius: 2, border: '1px solid #F1F5F9' }}>
+      <Card sx={{ borderRadius: 2, border: "1px solid #F1F5F9" }}>
         <List dense>
           {data?.recentActivities.map((activity) => (
-            <ListItem key={activity.id} sx={{ borderBottom: '1px solid #F8FAFC' }}>
+            <ListItem
+              key={activity.id}
+              sx={{ borderBottom: "1px solid #F8FAFC" }}
+            >
               <ListItemIcon sx={{ minWidth: 36 }}>
-                {MODULE_ICONS[activity.module] || <DynamicFormIcon fontSize="small" />}
+                {MODULE_ICONS[activity.module] || (
+                  <DynamicFormIcon fontSize="small" />
+                )}
               </ListItemIcon>
               <ListItemText
                 primary={activity.description}
                 secondary={`${activity.performedBy} · ${new Date(activity.performedAt).toLocaleString()}`}
-                primaryTypographyProps={{ fontSize: '0.85rem', color: '#1E293B' }}
-                secondaryTypographyProps={{ fontSize: '0.75rem' }}
+                primaryTypographyProps={{
+                  fontSize: "0.85rem",
+                  color: "#1E293B",
+                }}
+                secondaryTypographyProps={{ fontSize: "0.75rem" }}
               />
             </ListItem>
           ))}
@@ -158,7 +197,10 @@ export default function RvskAdminHome() {
             <ListItem>
               <ListItemText
                 primary="No recent activity"
-                primaryTypographyProps={{ color: 'text.secondary', textAlign: 'center' }}
+                primaryTypographyProps={{
+                  color: "text.secondary",
+                  textAlign: "center",
+                }}
               />
             </ListItem>
           )}

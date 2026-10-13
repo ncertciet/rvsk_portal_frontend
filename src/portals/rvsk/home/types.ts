@@ -10,12 +10,27 @@ export interface ActivityLogEntry {
 }
 
 export interface GalleryImage {
+  //   id: string;
+  //   imageUrl: string;
+  //   thumbnailUrl: string;
+  //   stateName: string;
+  //   stateCode: string;
+  //   caption: string;
+  //   uploadedAt: string;
   id: string;
-  imageUrl: string;
-  thumbnailUrl: string;
-  stateName: string;
+  imageUrl?: string;
+  thumbnailUrl?: string;
+  caption?: string;
+  stateName?: string;
+
+  // API fields
+  fileName: string;
+  filePath: string;
+  fileSize: string;
+  fileType: string;
   stateCode: string;
-  caption: string;
+  isActive: boolean;
+  thumbnailPath: string | null;
   uploadedAt: string;
   isProfileImage?: boolean;
 }
@@ -23,7 +38,7 @@ export interface GalleryImage {
 export interface AssignedForm {
   id: string;
   title: string;
-  status: 'PENDING' | 'DRAFT_SAVED' | 'SUBMITTED';
+  status: "PENDING" | "DRAFT_SAVED" | "SUBMITTED";
   dueDate: string;
   assignedDate: string;
 }

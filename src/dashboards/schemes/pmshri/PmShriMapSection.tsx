@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback } from "react";
 import {
   Box,
   Typography,
@@ -10,13 +10,13 @@ import {
   Button,
   IconButton,
   InputLabel,
-} from '@mui/material';
-import ClearIcon from '@mui/icons-material/Clear';
-import apiClient from '../../../services/apiClient';
-import ImplementationStatusTab from './tabs/ImplementationStatusTab';
-import StatewiseTab from './tabs/StatewiseTab';
-import DistrictwiseTab from './tabs/DistrictwiseTab';
-import SchoolwiseTab from './tabs/SchoolwiseTab';
+} from "@mui/material";
+import ClearIcon from "@mui/icons-material/Clear";
+import apiClient from "../../../services/apiClient";
+import ImplementationStatusTab from "./tabs/ImplementationStatusTab";
+import StatewiseTab from "./tabs/StatewiseTab";
+import DistrictwiseTab from "./tabs/DistrictwiseTab";
+import SchoolwiseTab from "./tabs/SchoolwiseTab";
 
 interface PmShriMapSectionProps {
   states: string[];
@@ -24,10 +24,10 @@ interface PmShriMapSectionProps {
 
 export default function PmShriMapSection({ states }: PmShriMapSectionProps) {
   const [tab, setTab] = useState(0);
-  const [selectedState, setSelectedState] = useState<string>('');
-  const [selectedDistrict, setSelectedDistrict] = useState<string>('');
-  const [selectedCategory, setSelectedCategory] = useState<string>('');
-  const [selectedKpi, setSelectedKpi] = useState<string>('');
+  const [selectedState, setSelectedState] = useState<string>("");
+  const [selectedDistrict, setSelectedDistrict] = useState<string>("");
+  const [selectedCategory, setSelectedCategory] = useState<string>("");
+  const [selectedKpi, setSelectedKpi] = useState<string>("");
   const [districts, setDistricts] = useState<string[]>([]);
   const [loadingDistricts, setLoadingDistricts] = useState(false);
 
@@ -36,7 +36,9 @@ export default function PmShriMapSection({ states }: PmShriMapSectionProps) {
     if (selectedState) {
       setLoadingDistricts(true);
       apiClient
-        .get(`/schemes/PM_SHRI/filters/districts?stateName=${encodeURIComponent(selectedState)}`)
+        .get(
+          `/schemes/PM_SHRI/filters/districts?stateName=${encodeURIComponent(selectedState)}`,
+        )
         .then((res) => {
           setDistricts(res.data.districts || []);
           setLoadingDistricts(false);
@@ -44,30 +46,35 @@ export default function PmShriMapSection({ states }: PmShriMapSectionProps) {
         .catch(() => setLoadingDistricts(false));
     } else {
       setDistricts([]);
-      setSelectedDistrict('');
+      setSelectedDistrict("");
     }
   }, [selectedState]);
 
   const handleReset = useCallback(() => {
-    setSelectedState('');
-    setSelectedDistrict('');
-    setSelectedCategory('');
-    setSelectedKpi('');
+    setSelectedState("");
+    setSelectedDistrict("");
+    setSelectedCategory("");
+    setSelectedKpi("");
   }, []);
 
-  const categories = ['KVS', 'NVS', 'State Govt', 'All'];
-  const kpiOptions = ['Total Schools', 'Total Students', 'Total Teachers', 'CWSN Enrollment'];
+  const categories = ["KVS", "NVS", "State Govt", "All"];
+  const kpiOptions = [
+    "Total Schools",
+    "Total Students",
+    "Total Teachers",
+    "CWSN Enrollment",
+  ];
 
   return (
     <Box
       sx={{
         mt: 4,
-        border: '1px solid #E2E8F0',
-        borderTop: '3px solid #2563EB',
-        borderRadius: '16px',
+        border: "1px solid #E2E8F0",
+        borderTop: "3px solid #2563EB",
+        borderRadius: "16px",
         p: 3,
-        bgcolor: '#FFFFFF',
-        boxShadow: '0 4px 16px rgba(0,0,0,0.04)',
+        bgcolor: "#FFFFFF",
+        boxShadow: "0 4px 16px rgba(0,0,0,0.04)",
       }}
     >
       {/* Tabs */}
@@ -76,23 +83,23 @@ export default function PmShriMapSection({ states }: PmShriMapSectionProps) {
         onChange={(_, v) => setTab(v)}
         sx={{
           mb: 2,
-          '& .MuiTab-root': {
-            textTransform: 'none',
+          "& .MuiTab-root": {
+            textTransform: "none",
             fontWeight: 600,
-            fontSize: '0.875rem',
+            fontSize: "0.875rem",
             minHeight: 40,
-            borderRadius: '6px 6px 0 0',
-            transition: 'background-color 0.2s ease',
+            borderRadius: "6px 6px 0 0",
+            transition: "background-color 0.2s ease",
           },
-          '& .Mui-selected': {
-            color: '#1A4F99',
-            bgcolor: '#EFF6FF',
+          "& .Mui-selected": {
+            color: "#1A4F99",
+            bgcolor: "#EFF6FF",
             fontWeight: 700,
           },
-          '& .MuiTabs-indicator': {
-            backgroundColor: '#FF9933',
+          "& .MuiTabs-indicator": {
+            backgroundColor: "#FF9933",
             height: 3,
-            borderRadius: '3px 3px 0 0',
+            borderRadius: "3px 3px 0 0",
           },
         }}
       >
@@ -105,22 +112,30 @@ export default function PmShriMapSection({ states }: PmShriMapSectionProps) {
       {/* Filter Row */}
       <Box
         sx={{
-          display: 'flex',
+          display: "flex",
           gap: 2,
           mb: 3,
-          flexWrap: 'wrap',
-          alignItems: 'center',
+          flexWrap: "wrap",
+          alignItems: "center",
         }}
       >
         {/* State Dropdown */}
-        <FormControl size="small" sx={{ minWidth: 180, '& .MuiOutlinedInput-root': { boxShadow: '0 1px 2px rgba(0,0,0,0.04)' } }}>
+        <FormControl
+          size="small"
+          sx={{
+            minWidth: 180,
+            "& .MuiOutlinedInput-root": {
+              boxShadow: "0 1px 2px rgba(0,0,0,0.04)",
+            },
+          }}
+        >
           <InputLabel>State</InputLabel>
           <Select
             value={selectedState}
             label="State"
             onChange={(e) => {
               setSelectedState(e.target.value);
-              setSelectedDistrict('');
+              setSelectedDistrict("");
             }}
             endAdornment={
               selectedState ? (
@@ -128,8 +143,8 @@ export default function PmShriMapSection({ states }: PmShriMapSectionProps) {
                   size="small"
                   onClick={(e) => {
                     e.stopPropagation();
-                    setSelectedState('');
-                    setSelectedDistrict('');
+                    setSelectedState("");
+                    setSelectedDistrict("");
                   }}
                   sx={{ mr: 1.5 }}
                 >
@@ -147,7 +162,15 @@ export default function PmShriMapSection({ states }: PmShriMapSectionProps) {
         </FormControl>
 
         {/* District Dropdown */}
-        <FormControl size="small" sx={{ minWidth: 180, '& .MuiOutlinedInput-root': { boxShadow: '0 1px 2px rgba(0,0,0,0.04)' } }}>
+        <FormControl
+          size="small"
+          sx={{
+            minWidth: 180,
+            "& .MuiOutlinedInput-root": {
+              boxShadow: "0 1px 2px rgba(0,0,0,0.04)",
+            },
+          }}
+        >
           <InputLabel>District</InputLabel>
           <Select
             value={selectedDistrict}
@@ -160,7 +183,7 @@ export default function PmShriMapSection({ states }: PmShriMapSectionProps) {
                   size="small"
                   onClick={(e) => {
                     e.stopPropagation();
-                    setSelectedDistrict('');
+                    setSelectedDistrict("");
                   }}
                   sx={{ mr: 1.5 }}
                 >
@@ -178,7 +201,15 @@ export default function PmShriMapSection({ states }: PmShriMapSectionProps) {
         </FormControl>
 
         {/* Category Dropdown */}
-        <FormControl size="small" sx={{ minWidth: 140, '& .MuiOutlinedInput-root': { boxShadow: '0 1px 2px rgba(0,0,0,0.04)' } }}>
+        <FormControl
+          size="small"
+          sx={{
+            minWidth: 140,
+            "& .MuiOutlinedInput-root": {
+              boxShadow: "0 1px 2px rgba(0,0,0,0.04)",
+            },
+          }}
+        >
           <InputLabel>Category</InputLabel>
           <Select
             value={selectedCategory}
@@ -190,7 +221,7 @@ export default function PmShriMapSection({ states }: PmShriMapSectionProps) {
                   size="small"
                   onClick={(e) => {
                     e.stopPropagation();
-                    setSelectedCategory('');
+                    setSelectedCategory("");
                   }}
                   sx={{ mr: 1.5 }}
                 >
@@ -208,7 +239,15 @@ export default function PmShriMapSection({ states }: PmShriMapSectionProps) {
         </FormControl>
 
         {/* KPI Dropdown */}
-        <FormControl size="small" sx={{ minWidth: 160, '& .MuiOutlinedInput-root': { boxShadow: '0 1px 2px rgba(0,0,0,0.04)' } }}>
+        <FormControl
+          size="small"
+          sx={{
+            minWidth: 160,
+            "& .MuiOutlinedInput-root": {
+              boxShadow: "0 1px 2px rgba(0,0,0,0.04)",
+            },
+          }}
+        >
           <InputLabel>KPI</InputLabel>
           <Select
             value={selectedKpi}
@@ -220,7 +259,7 @@ export default function PmShriMapSection({ states }: PmShriMapSectionProps) {
                   size="small"
                   onClick={(e) => {
                     e.stopPropagation();
-                    setSelectedKpi('');
+                    setSelectedKpi("");
                   }}
                   sx={{ mr: 1.5 }}
                 >
@@ -242,11 +281,11 @@ export default function PmShriMapSection({ states }: PmShriMapSectionProps) {
           variant="contained"
           onClick={handleReset}
           sx={{
-            bgcolor: '#1A4F99',
-            textTransform: 'none',
+            bgcolor: "#1A4F99",
+            textTransform: "none",
             fontWeight: 600,
             px: 3,
-            '&:hover': { bgcolor: '#0D2B5B' },
+            "&:hover": { bgcolor: "#0D2B5B" },
           }}
         >
           Reset
@@ -260,9 +299,7 @@ export default function PmShriMapSection({ states }: PmShriMapSectionProps) {
           states={states}
         />
       )}
-      {tab === 1 && (
-        <StatewiseTab selectedState={selectedState} />
-      )}
+      {tab === 1 && <StatewiseTab selectedState={selectedState} />}
       {tab === 2 && (
         <DistrictwiseTab
           selectedState={selectedState}
@@ -277,7 +314,7 @@ export default function PmShriMapSection({ states }: PmShriMapSectionProps) {
       )}
 
       {/* Last Updated */}
-      <Box sx={{ mt: 2, textAlign: 'right' }}>
+      <Box sx={{ mt: 2, textAlign: "right" }}>
         <Typography variant="caption" color="text.secondary">
           Last Updated date : 08-MAY-2025
         </Typography>

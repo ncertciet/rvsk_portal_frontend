@@ -1,11 +1,11 @@
-import apiClient from '../../../services/apiClient';
+import apiClient from "../../../services/apiClient";
 import {
   SuperAdminHomeData,
   RvskAdminHomeData,
   StateAdminHomeData,
   SpocHomeData,
   GalleryImage,
-} from './types';
+} from "./types";
 
 // ─── API Functions ──────────────────────────────────────────────────────────
 // NOTE: These intentionally do NOT swallow errors or return dummy data.
@@ -14,27 +14,30 @@ import {
 // normalizes them via getApiError() and renders a message.
 
 export async function fetchSuperAdminHome(): Promise<SuperAdminHomeData> {
-  const response = await apiClient.get<SuperAdminHomeData>('/home/super-admin');
+  const response = await apiClient.get<SuperAdminHomeData>("/home/super-admin");
   return response.data;
 }
 
 export async function fetchRvskAdminHome(): Promise<RvskAdminHomeData> {
-  const response = await apiClient.get<RvskAdminHomeData>('/home/rvsk-admin');
+  const response = await apiClient.get<RvskAdminHomeData>("/home/rvsk-admin");
   return response.data;
 }
 
 export async function fetchStateAdminHome(): Promise<StateAdminHomeData> {
-  const response = await apiClient.get<StateAdminHomeData>('/home/state-admin');
+  const response = await apiClient.get<StateAdminHomeData>("/home/state-admin");
   return response.data;
 }
 
 export async function fetchSpocHome(): Promise<SpocHomeData> {
-  const response = await apiClient.get<SpocHomeData>('/home/spoc');
+  const response = await apiClient.get<SpocHomeData>("/home/spoc");
   return response.data;
 }
 
-export async function fetchGalleryImages(page = 0, size = 20): Promise<GalleryImage[]> {
-  const response = await apiClient.get<GalleryImage[]>('/gallery/images', {
+export async function fetchGalleryImages(
+  page = 0,
+  size = 20,
+): Promise<GalleryImage[]> {
+  const response = await apiClient.get<GalleryImage[]>("/gallery/images", {
     params: { page, size },
   });
   return response.data;
@@ -45,18 +48,39 @@ export async function fetchGalleryImages(page = 0, size = 20): Promise<GalleryIm
  * Used by the RVSK/Super Admin home "VSK Gallery" slider.
  */
 export async function fetchProfileImages(): Promise<GalleryImage[]> {
-  const response = await apiClient.get<GalleryImage[]>('/gallery/profile-images');
+  const response = await apiClient.get<GalleryImage[]>(
+    "/gallery/profile-images",
+  );
   return response.data;
 }
 
-export async function uploadGalleryImage(file: File, caption: string): Promise<GalleryImage> {
-  const formData = new FormData();
-  formData.append('file', file);
-  formData.append('caption', caption);
-
-  const response = await apiClient.post<GalleryImage>('/gallery/upload', formData, {
-    headers: { 'Content-Type': 'multipart/form-data' },
+/**
+ * Fetch gallery images for the logged-in user's state.
+ */
+export async function fetchStateGalleryImages(
+  stateCode: string,
+): Promise<GalleryImage[]> {
+  const response = await apiClient.get<GalleryImage[]>("/gallery", {
+    params: { stateCode },
   });
+  return response.data;
+}
+
+export async function uploadGalleryImage(
+  file: File,
+  caption: string,
+): Promise<GalleryImage> {
+  const formData = new FormData();
+  formData.append("file", file);
+  formData.append("caption", caption);
+
+  const response = await apiClient.post<GalleryImage>(
+    "/gallery/upload",
+    formData,
+    {
+      headers: { "Content-Type": "multipart/form-data" },
+    },
+  );
   return response.data;
 }
 
@@ -65,7 +89,11 @@ export async function deleteGalleryImage(id: string): Promise<void> {
 }
 
 /** Mark one gallery image as the State's VSK Profile Image. */
-export async function setGalleryProfileImage(id: string): Promise<GalleryImage> {
-  const response = await apiClient.put<GalleryImage>(`/gallery/${id}/profile-image`);
+export async function setGalleryProfileImage(
+  id: string,
+): Promise<GalleryImage> {
+  const response = await apiClient.put<GalleryImage>(
+    `/gallery/${id}/profile-image`,
+  );
   return response.data;
 }
