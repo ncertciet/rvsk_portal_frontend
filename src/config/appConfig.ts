@@ -14,26 +14,17 @@ export const appConfig = {
   /** Backend API base URL (proxied through Vite in dev, nginx in prod) */
   api: {
     baseUrl: import.meta.env.VITE_API_BASE_URL || "/api/v1",
-    // baseUrl:
-    //   import.meta.env.VITE_PORTAL_API_URL ||
-    //   "https://rvsk.diksha.gov.in/rvsk/portal/api/v1",
   },
 
   /** Schemes service direct URL (used in dev for Vite proxy target) */
   schemes: {
     serviceUrl:
       import.meta.env.VITE_SCHEMES_SERVICE_URL || "http://localhost:8082",
-    // serviceUrl:
-    //   import.meta.env.VITE_SCHEMES_API_URL ||
-    //   "https://rvsk.diksha.gov.in/rvsk/schemes/api/v1",
   },
 
   /** Auth service direct URL (used in dev for Vite proxy target) */
   auth: {
     serviceUrl:
       import.meta.env.VITE_AUTH_SERVICE_URL || "http://localhost:8091",
-    // serviceUrl:
-    //   import.meta.env.VITE_AUTH_SERVICE_URL ||
-    //   "https://rvsk.diksha.gov.in/rvsk/portal",
   },
 } as const;

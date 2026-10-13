@@ -64,7 +64,7 @@ export default function VskImageUpload() {
     const baseUrl = import.meta.env.VITE_PORTAL_API_URL;
 
     if (baseUrl) {
-      return `${baseUrl.replace(/\/+$/, "")}/gallery/files/${encodeURIComponent(
+      return `${baseUrl.replace(/\/+$/, "")}/api/v1/gallery/files/${encodeURIComponent(
         fileName,
       )}`;
     }
